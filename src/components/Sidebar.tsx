@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { useOpenOrders } from "@/hooks/useOpenOrders";
+import { ShieldCheck } from "lucide-react";
 import {
   BarChart3,
   ClipboardList,
@@ -16,8 +18,11 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
 }
 
+const IS_BROKER = !!import.meta.env.VITE_BROKER_REGNO;
+
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const { t } = useTranslation();
+  const { orders } = useOpenOrders();
 
   const primaryNav = [
     { id: "trade", label: t("nav.newTrade"), icon: TrendingUp },
@@ -32,7 +37,7 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   ];
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-edge bg-card">
+    <aside className="flex h-screen w-64 flex-col border-r border-edge bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-edge px-5">
         <img
@@ -63,14 +68,30 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             >
               <Icon className="h-4 w-4 flex-shrink-0" />
               {label}
-              {id === "orders" && activeTab !== "orders" && (
+              {id === "orders" && orders.length > 0 && (
                 <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500/20 px-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  3
+                  {orders.length}
                 </span>
               )}
             </button>
           ))}
         </div>
+
+        {/* Broker panel — only shown when VITE_BROKER_REGNO is set */}
+        {IS_BROKER && (
+          <button
+            onClick={() => onTabChange("broker")}
+            className={cn(
+              "mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
+              activeTab === "broker"
+                ? "bg-blue-600/15 text-blue-600 dark:text-blue-400"
+                : "text-ink2 hover:bg-muted hover:text-ink",
+            )}
+          >
+            <ShieldCheck className="h-4 w-4 flex-shrink-0" />
+            Broker Panel
+          </button>
+        )}
 
         {/* Divider */}
         <div className="my-3 flex items-center gap-2">

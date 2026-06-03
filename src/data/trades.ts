@@ -213,7 +213,4 @@ export const trades: Trade[] = [
   },
 ];
 
-export const LOCKED_STATUSES: TradeStatus[] = ["filled", "nominal", "final"];
-
-export const canCancel = (status: TradeStatus): boolean =>
-  !LOCKED_STATUSES.includes(status);
+export const canCancel = (status: TradeStatus): boolean => status === "open";

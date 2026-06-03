@@ -1,15 +1,16 @@
 import { useTranslation } from "react-i18next";
 import { PenLine, X } from "lucide-react";
-import { canCancel, type Trade } from "@/data/dummy";
+import { canCancel } from "@/data/trades";
+import type { Trade } from "@/data/types";
 import { formatCurrency } from "@/lib/utils";
-import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { TableRow, Td } from "../ui/table";
 import { goodTillLabel } from "./utils";
+import { StatusStepper } from "./StatusStepper";
 
 interface OrderRowProps {
   trade: Trade;
-  onCancel: (id: string) => void;
+  onCancel: (trade: Trade) => void;
   onAmend: (trade: Trade) => void;
 }
 
@@ -47,13 +48,11 @@ export const OrderRow = ({ trade, onCancel, onAmend }: OrderRowProps) => {
       </Td>
       <Td className="text-xs text-ink3">{goodTillLabel(trade.goodTill)}</Td>
       <Td>
-        <Badge variant={trade.status === "partial" ? "warning" : "outline"}>
-          {trade.status}
-        </Badge>
+        <StatusStepper status={trade.status} />
       </Td>
       <Td center>
         <Button
-          onClick={() => onCancel(trade.id)}
+          onClick={() => onCancel(trade)}
           disabled={locked}
           variant="destructive"
           size="sm"

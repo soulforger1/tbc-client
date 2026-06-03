@@ -1,0 +1,426 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
+import {
+  ChevronDown,
+  Search,
+  Loader2,
+  Check,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
+import { api, type Stock } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
+
+const PAGE_SIZE = 20;
+
+interface SymbolPickerProps {
+  value: string;
+  onChange: (symbol: string) => void;
+  onStockSelect?: (stock: Stock) => void;
+  initialStock?: Stock | null;
+  alwaysOpen?: boolean;
+}
+
+const PriceChange = ({ pc }: { pc: number | null }) => {
+  if (pc == null) return null;
+  const positive = pc >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? "text-emerald-500" : "text-red-500"}`}
+    >
+      {positive ? (
+        <TrendingUp className="h-3 w-3" />
+      ) : (
+        <TrendingDown className="h-3 w-3" />
+      )}
+      {positive ? "+" : ""}
+      {pc.toFixed(2)}%
+    </span>
+  );
+};
+
+export const SymbolPicker = ({
+  value,
+  onChange,
+  onStockSelect,
+  initialStock,
+  alwaysOpen,
+}: SymbolPickerProps) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [stocks, setStocks] = useState<Stock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [stockOffset, setStockOffset] = useState(0);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // For the selected stock banner — prefer initialStock prop, fall back to finding in list
+  const bannerStock =
+    initialStock ?? stocks.find((s) => s.prefix === value) ?? null;
+  // For the dropdown (non-alwaysOpen) trigger label
+  const selectedStock = stocks.find((s) => s.prefix === value);
+
+  // ── alwaysOpen: debounce search query ──────────────────────────────────────
+  useEffect(() => {
+    if (!alwaysOpen) return;
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query, alwaysOpen]);
+
+  // ── alwaysOpen: initial load + reload on query change ──────────────────────
+  useEffect(() => {
+    if (!alwaysOpen) return;
+    setStocks([]);
+    setStockOffset(0);
+    setHasMore(false);
+    setLoading(true);
+    api
+      .getStocks({
+        limit: PAGE_SIZE,
+        offset: 0,
+        q: debouncedQuery || undefined,
+      })
+      .then(({ data, hasMore: more }) => {
+        setStocks(data);
+        setHasMore(more);
+        setStockOffset(PAGE_SIZE);
+      })
+      .finally(() => setLoading(false));
+  }, [debouncedQuery, alwaysOpen]);
+
+  // ── non-alwaysOpen: load all stocks once for dropdown ─────────────────────
+  useEffect(() => {
+    if (alwaysOpen) return;
+    api
+      .getStocks()
+      .then(({ data }) => setStocks(data))
+      .finally(() => setLoading(false));
+  }, [alwaysOpen]);
+
+  // ── alwaysOpen: infinite scroll via IntersectionObserver ──────────────────
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { data, hasMore: more } = await api.getStocks({
+        limit: PAGE_SIZE,
+        offset: stockOffset,
+        q: debouncedQuery || undefined,
+      });
+      setStocks((prev) => [...prev, ...data]);
+      setHasMore(more);
+      setStockOffset((prev) => prev + PAGE_SIZE);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, stockOffset, debouncedQuery]);
+
+  useEffect(() => {
+    if (!alwaysOpen) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [alwaysOpen, loadMore]);
+
+  // ── dropdown open/close helpers ───────────────────────────────────────────
+  useEffect(() => {
+    if (open) {
+      const rect = buttonRef.current?.getBoundingClientRect();
+      if (rect) {
+        setDropdownStyle({
+          position: "fixed",
+          top: rect.bottom + 6,
+          left: rect.left,
+          width: Math.max(rect.width, 340),
+          zIndex: 9999,
+        });
+      }
+      setTimeout(() => inputRef.current?.focus(), 0);
+    } else {
+      setQuery("");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (
+        buttonRef.current?.contains(e.target as Node) ||
+        document
+          .getElementById("symbol-picker-dropdown")
+          ?.contains(e.target as Node)
+      )
+        return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  // client-side filter for dropdown only (alwaysOpen uses server-side)
+  const filtered = alwaysOpen
+    ? stocks
+    : query.trim()
+      ? stocks.filter(
+          (s) =>
+            s.prefix?.toLowerCase().includes(query.toLowerCase()) ||
+            s.name?.toLowerCase().includes(query.toLowerCase()),
+        )
+      : stocks;
+
+  // ── alwaysOpen render ─────────────────────────────────────────────────────
+  if (alwaysOpen) {
+    return (
+      <div className="rounded-xl border border-edge bg-card overflow-hidden">
+        {/* Selected stock banner */}
+        {bannerStock ? (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-500/30">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+                <Check className="h-3.5 w-3.5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-bold text-blue-500 truncate">
+                  {bannerStock.prefix}
+                </div>
+                <div className="text-xs text-ink3 truncate">
+                  {bannerStock.name}
+                </div>
+              </div>
+            </div>
+            <div className="shrink-0 text-right ml-2">
+              <div className="text-sm font-bold text-ink">
+                {bannerStock.price != null
+                  ? formatCurrency(bannerStock.price)
+                  : "—"}
+              </div>
+              <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                <PriceChange pc={bannerStock.pc} />
+                <span className="text-xs text-ink4">{bannerStock.ccy}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-edge bg-muted/40 text-sm text-ink4">
+            <div className="w-6 h-6 rounded-full border-2 border-dashed border-ink4 shrink-0" />
+            No stock selected
+          </div>
+        )}
+
+        {/* Search bar */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-edge bg-muted/60">
+          <Search className="h-4 w-4 shrink-0 text-ink3" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by symbol or company name..."
+            className="w-full bg-transparent text-sm text-ink placeholder:text-ink4 focus:outline-none"
+            autoFocus
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="text-ink4 hover:text-ink text-xs shrink-0"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-ink3" />
+          </div>
+        ) : (
+          <ul className="max-h-64 overflow-y-auto">
+            {stocks.length === 0 ? (
+              <li className="px-4 py-4 text-sm text-ink4 text-center">
+                No stocks found{query ? ` for "${query}"` : ""}
+              </li>
+            ) : (
+              <>
+                {stocks.map((s) => {
+                  const isSelected = s.prefix === value;
+                  return (
+                    <li
+                      key={s.id}
+                      className="border-b border-edge last:border-0"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onChange(s.prefix);
+                          onStockSelect?.(s);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors border-l-2 ${isSelected ? "bg-blue-500/10 border-blue-500" : "hover:bg-muted border-transparent"}`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span
+                            className={`text-sm font-bold shrink-0 max-w-[8rem] truncate rounded px-1.5 py-0.5 ${isSelected ? "bg-blue-500/20 text-blue-500" : "bg-subtle/60 text-ink"}`}
+                          >
+                            {s.prefix}
+                          </span>
+                          <div className="min-w-0">
+                            <div
+                              className={`text-sm truncate ${isSelected ? "text-ink font-medium" : "text-ink2"}`}
+                            >
+                              {s.name}
+                            </div>
+                            <div className="text-xs text-ink4 truncate">
+                              {s.exchange} · {s.ccy}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="shrink-0 ml-3 flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-ink">
+                              {s.price != null ? formatCurrency(s.price) : "—"}
+                            </div>
+                            <PriceChange pc={s.pc} />
+                          </div>
+                          <div className="w-4 flex items-center justify-center">
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-blue-500" />
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+                {/* Infinite scroll sentinel */}
+                <div
+                  ref={sentinelRef}
+                  className="py-2 flex items-center justify-center"
+                >
+                  {loadingMore && (
+                    <Loader2 className="h-4 w-4 animate-spin text-ink4" />
+                  )}
+                </div>
+              </>
+            )}
+          </ul>
+        )}
+
+        <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
+          {stocks.length} stock{stocks.length !== 1 ? "s" : ""}
+          {query ? ` matching "${query}"` : " loaded"}
+          {hasMore && !loading && " · scroll for more"}
+        </div>
+      </div>
+    );
+  }
+
+  // ── dropdown render ───────────────────────────────────────────────────────
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full h-9 flex items-center justify-between gap-1 rounded-lg border border-edge bg-muted px-3 text-sm text-ink transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      >
+        <span className="font-semibold truncate">
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-ink3" />
+          ) : (
+            (selectedStock?.prefix ?? value)
+          )}
+        </span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-ink3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            id="symbol-picker-dropdown"
+            style={dropdownStyle}
+            className="rounded-xl border border-edge bg-card shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-edge bg-muted/60">
+              <Search className="h-4 w-4 shrink-0 text-ink3" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by symbol or company name..."
+                className="w-full bg-transparent text-sm text-ink placeholder:text-ink4 focus:outline-none"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className="text-ink4 hover:text-ink text-xs shrink-0"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            <ul className="max-h-64 overflow-y-auto">
+              {filtered.length === 0 ? (
+                <li className="px-4 py-4 text-sm text-ink4 text-center">
+                  No stocks found for "{query}"
+                </li>
+              ) : (
+                filtered.map((s) => (
+                  <li key={s.id} className="border-b border-edge last:border-0">
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        onChange(s.prefix);
+                        onStockSelect?.(s);
+                        setOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted transition-colors ${s.prefix === value ? "bg-muted/80" : ""}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-sm font-bold text-ink shrink-0 max-w-[8rem] truncate bg-subtle/60 rounded px-1.5 py-0.5">
+                          {s.prefix}
+                        </span>
+                        <span className="text-sm text-ink2 truncate">
+                          {s.name}
+                        </span>
+                      </div>
+                      <div className="shrink-0 ml-3 flex flex-col items-end gap-0.5">
+                        <span className="text-xs font-semibold text-ink">
+                          {s.price != null ? formatCurrency(s.price) : "—"}
+                        </span>
+                        <PriceChange pc={s.pc} />
+                      </div>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+
+            <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
+              {filtered.length} stock{filtered.length !== 1 ? "s" : ""}
+              {query ? ` matching "${query}"` : " available"}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+};

@@ -1,15 +1,18 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryState, parseAsString } from "nuqs";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { OpenOrdersProvider } from "@/context/OpenOrdersContext";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { TradePage } from "@/pages/TradePage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
 import { OrdersPage } from "@/pages/OrdersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { BrokerPage } from "@/pages/BrokerPage";
+import { WalletPage } from "@/pages/WalletPage";
 
 const PlaceholderPage = ({ title }: { title: string }) => {
   const { t } = useTranslation();
@@ -22,7 +25,10 @@ const PlaceholderPage = ({ title }: { title: string }) => {
 
 const AppInner = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("trade");
+  const [activeTab, setActiveTab] = useQueryState(
+    "tab",
+    parseAsString.withDefault("trade"),
+  );
 
   const pageMeta: Record<string, { title: string; subtitle?: string }> = {
     dashboard: { title: t("page.dashboard"), subtitle: t("page.dashboardSub") },
@@ -48,8 +54,12 @@ const AppInner = () => {
         return <PortfolioPage />;
       case "orders":
         return <OrdersPage />;
+      case "wallet":
+        return <WalletPage />;
       case "settings":
         return <SettingsPage />;
+      case "broker":
+        return <BrokerPage />;
       default:
         return <PlaceholderPage title={meta.title} />;
     }
@@ -69,7 +79,9 @@ const AppInner = () => {
 const App = () => (
   <ThemeProvider>
     <ToastProvider>
-      <AppInner />
+      <OpenOrdersProvider>
+        <AppInner />
+      </OpenOrdersProvider>
     </ToastProvider>
   </ThemeProvider>
 );

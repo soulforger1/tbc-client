@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Input } from "../ui/input";
 import { Select } from "../ui/select";
 import { FormGroup } from "../ui/form-group";
-import { SYMBOLS } from "./constants";
+import { SymbolPicker } from "./SymbolPicker";
 
 interface OrderFieldsProps {
   symbol: string;
@@ -22,35 +22,26 @@ export const OrderFields = ({
   onOrderTypeChange,
 }: OrderFieldsProps) => {
   const { t } = useTranslation();
+
   return (
     <div className="grid grid-cols-3 gap-3 mb-5">
       <FormGroup label={t("trade.symbol")}>
-        <Select
-          value={symbol}
-          onChange={(e) => onSymbolChange(e.target.value)}
-          className="h-9 text-sm font-semibold"
-        >
-          {SYMBOLS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
+        <SymbolPicker value={symbol} onChange={onSymbolChange} />
       </FormGroup>
       <FormGroup label={t("trade.quantity")}>
         <Input
-          type="number"
-          min="1"
           placeholder="0"
           value={quantity}
-          onChange={(e) => onQuantityChange(e.target.value)}
-          className="h-9 text-sm font-semibold"
+          onChange={(e) => onQuantityChange(e.target.value.replace(/\D/g, ""))}
+          className="h-9 text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
       </FormGroup>
       <FormGroup label={t("trade.orderType")}>
         <Select
           value={orderType}
-          onChange={(e) => onOrderTypeChange(e.target.value as "market" | "limit")}
+          onChange={(e) =>
+            onOrderTypeChange(e.target.value as "market" | "limit")
+          }
           className="h-9 text-sm font-semibold"
         >
           <option value="market">{t("trade.market")}</option>

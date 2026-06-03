@@ -1,5 +1,7 @@
-import { OpenOrders } from '@/components/OpenOrders'
+import { OpenOrders } from "@/components/OpenOrders";
 
 export const OrdersPage = () => (
-  <div><OpenOrders /></div>
-)
+  <div>
+    <OpenOrders />
+  </div>
+);

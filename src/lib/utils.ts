@@ -10,6 +10,18 @@ export const formatCurrency = (value: number): string =>
     minimumFractionDigits: 2,
   }).format(value)
 
+export const formatLocalCurrency = (value: number, ccy: string): string => {
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: ccy,
+      minimumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${ccy} ${value.toFixed(2)}`;
+  }
+}
+
 export const formatNumber = (value: number): string =>
   new Intl.NumberFormat('en-US').format(value)
 

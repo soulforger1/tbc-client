@@ -6,37 +6,48 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { stats } from "@/data/dummy";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Card, CardContent } from "./ui/card";
 
 export const StatsCards = () => {
+  const { data, loading } = usePortfolio();
+  const stats = data?.stats;
+
+  const portfolioValue = stats?.portfolioValue ?? 0;
+  const totalPnl = stats?.totalPnl ?? 0;
+  const availableCash = stats?.availableCash ?? 0;
+  const totalPnlPct =
+    portfolioValue - totalPnl > 0
+      ? (totalPnl / (portfolioValue - totalPnl)) * 100
+      : 0;
+
   const items = [
     {
       label: "Portfolio Value",
-      value: formatCurrency(stats.portfolioValue),
-      change: formatPercent(stats.portfolioChangePct),
-      changeAmt: `${stats.portfolioChange >= 0 ? "+" : ""}${formatCurrency(stats.portfolioChange)} today`,
-      positive: stats.portfolioChangePct >= 0,
+      value: loading ? "—" : formatCurrency(portfolioValue),
+      change: "—",
+      changeAmt: "total value",
+      positive: true,
       icon: TrendingUp,
       iconColor: "text-blue-500",
       iconBg: "bg-blue-500/10",
     },
     {
       label: "Total P&L",
-      value: formatCurrency(stats.totalPnl),
-      change: formatPercent(stats.totalPnlPct),
+      value: loading ? "—" : formatCurrency(totalPnl),
+      change: loading ? "—" : formatPercent(totalPnlPct),
       changeAmt: "all time",
-      positive: stats.totalPnl >= 0,
+      positive: totalPnl >= 0,
       icon: DollarSign,
       iconColor: "text-emerald-500",
       iconBg: "bg-emerald-500/10",
     },
     {
-      label: "Win Rate",
-      value: `${stats.winRate}%`,
-      change: "+2.1%",
-      changeAmt: "vs last month",
+      label: "Stock Value",
+      value: loading ? "—" : formatCurrency(stats?.stockValueUSD ?? 0),
+      change: "—",
+      changeAmt: "USD",
       positive: true,
       icon: Target,
       iconColor: "text-violet-500",
@@ -44,9 +55,9 @@ export const StatsCards = () => {
     },
     {
       label: "Available Cash",
-      value: formatCurrency(stats.availableCash),
-      change: `${stats.filledTrades}/${stats.totalTrades}`,
-      changeAmt: "trades filled",
+      value: loading ? "—" : formatCurrency(availableCash),
+      change: "—",
+      changeAmt: "buying power",
       positive: true,
       icon: Wallet,
       iconColor: "text-amber-500",

@@ -1,5 +1,7 @@
-import { TradeHistory } from '@/components/TradeHistory'
+import { TradeHistory } from "@/components/TradeHistory";
 
 export const HistoryPage = () => (
-  <div><TradeHistory /></div>
-)
+  <div>
+    <TradeHistory />
+  </div>
+);

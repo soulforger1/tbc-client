@@ -1,12 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { stats } from "@/data/dummy";
+import { formatCurrency, formatLocalCurrency } from "@/lib/utils";
+import type { Stock, FeeResponse } from "@/lib/api";
 
 interface OrderSummaryProps {
+  selectedStock: Stock | null;
   marketPrice: number;
   tradeValue: number;
-  commission: number;
+  commission: number | null;
+  feeResult: FeeResponse | null;
+  buyingPower: number | null;
   goodTill: string;
 }
 
@@ -20,60 +23,91 @@ const SummaryRow = ({
   highlight?: boolean;
 }) => (
   <div className="flex items-center justify-between gap-2">
-    <span className="text-xs text-ink4">{label}</span>
-    <span className={`text-xs font-medium ${highlight ? "text-emerald-500" : "text-ink3"}`}>
+    <span className="text-sm text-ink3">{label}</span>
+    <span
+      className={`text-sm font-medium ${highlight ? "text-emerald-500" : "text-ink2"}`}
+    >
       {value}
     </span>
   </div>
 );
 
 export const OrderSummary = ({
+  selectedStock,
   marketPrice,
   tradeValue,
   commission,
+  feeResult,
+  buyingPower,
   goodTill,
 }: OrderSummaryProps) => {
   const { t } = useTranslation();
+
+  const ccy = selectedStock?.ccy ?? "USD";
+  const fmt = (v: number) => formatLocalCurrency(v, ccy);
+
+  const rateLabel =
+    feeResult && feeResult.rate !== 1
+      ? `${feeResult.rate.toFixed(4)} ${ccy}/USD`
+      : ccy === "USD"
+        ? "1.0000 USD"
+        : "—";
+
+  const commissionLabel =
+    commission != null
+      ? feeResult
+        ? `${fmt(commission)} (${(feeResult.feeRate * 100).toFixed(2)}%)`
+        : fmt(commission)
+      : t("trade.automatically");
+
   return (
     <>
       <div className="rounded-lg border border-edge bg-muted/40 px-4 py-3 mb-4">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-ink4">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink3">
           {t("trade.createOrder")}
         </p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
-          <SummaryRow label={t("trade.currency")} value={t("trade.automatically")} />
-          <SummaryRow label={t("trade.buyingPower")} value={formatCurrency(stats.buyingPower)} highlight />
-          <SummaryRow label={t("trade.price")} value={formatCurrency(marketPrice)} />
+          <SummaryRow label={t("trade.currency")} value={ccy} />
+          <SummaryRow
+            label={t("trade.buyingPower")}
+            value={buyingPower != null ? formatCurrency(buyingPower) : "—"}
+            highlight
+          />
+          <SummaryRow label={t("trade.price")} value={fmt(marketPrice)} />
           <SummaryRow
             label={t("trade.value")}
-            value={tradeValue > 0 ? formatCurrency(tradeValue) : t("trade.automatically")}
+            value={tradeValue > 0 ? fmt(tradeValue) : "—"}
           />
           <SummaryRow label={t("trade.goodTill")} value={goodTill} />
-          <SummaryRow
-            label={t("trade.commission")}
-            value={commission > 0 ? `${formatCurrency(commission)} (1%)` : t("trade.commissionAuto")}
-          />
+          <SummaryRow label={t("trade.commission")} value={commissionLabel} />
           <SummaryRow
             label={t("trade.tradeValue")}
-            value={tradeValue > 0 ? formatCurrency(tradeValue + commission) : t("trade.automatically")}
+            value={
+              tradeValue > 0 && commission != null
+                ? fmt(tradeValue + commission)
+                : "—"
+            }
           />
-          <SummaryRow label={t("trade.rate")} value={t("trade.rateDefault")} />
+          <SummaryRow label={t("trade.rate")} value={rateLabel} />
         </div>
         <div className="mt-3 pt-2.5 border-t border-edge flex items-center gap-1.5">
-          <span className="text-xs text-ink4">{t("trade.description")}:</span>
-          <span className="text-xs text-ink3">{t("trade.descriptionDefault")}</span>
+          <span className="text-sm text-ink3">{t("trade.description")}:</span>
+          <span className="text-sm text-ink2">
+            {t("trade.descriptionDefault")}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 pb-4 text-xs text-ink4">
-        <Info className="h-3.5 w-3.5 flex-shrink-0" />
+      <div className="flex items-center gap-1.5 pb-4 text-sm text-ink3">
+        <Info className="h-4 w-4 shrink-0" />
         {t("trade.marketPrice")}:{" "}
-        <span className="text-ink3">{formatCurrency(marketPrice)}</span>
-        {tradeValue > 0 && (
+        <span className="text-ink2">{fmt(marketPrice)}</span>
+        {tradeValue > 0 && commission != null && (
           <>
-            {" "}· {t("trade.estTotal")}:{" "}
-            <span className="font-medium text-ink2">
-              {formatCurrency(tradeValue + commission)}
+            {" "}
+            · {t("trade.estTotal")}:{" "}
+            <span className="font-semibold text-ink">
+              {fmt(tradeValue + commission)}
             </span>
           </>
         )}

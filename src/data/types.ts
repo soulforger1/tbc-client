@@ -1,4 +1,4 @@
-export type TradeStatus = "open" | "filled" | "cancelled" | "partial" | "nominal" | "final";
+export type TradeStatus = "open" | "filing" | "nominal" | "closed" | "filled" | "cancelled" | "partial" | "final";
 export type TradeSide = "buy" | "sell";
 export type OrderType = "market" | "limit";
 export type GoodTill = "day" | "gtc";

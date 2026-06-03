@@ -12,14 +12,14 @@ export const SideSwitcher = ({ side, onChange }: SideSwitcherProps) => {
       <button
         type="button"
         onClick={() => onChange("buy")}
-        className={`flex-1 rounded-md py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${side === "buy" ? "bg-emerald-600 text-white" : "text-ink3 hover:text-ink"}`}
+        className={`flex-1 rounded-md py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${side === "buy" ? "bg-emerald-400 text-white" : "text-ink2 hover:text-ink"}`}
       >
         {t("trade.buy")}
       </button>
       <button
         type="button"
         onClick={() => onChange("sell")}
-        className={`flex-1 rounded-md py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${side === "sell" ? "bg-red-600 text-white" : "text-ink3 hover:text-ink"}`}
+        className={`flex-1 rounded-md py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${side === "sell" ? "bg-red-400 text-white" : "text-ink2 hover:text-ink"}`}
       >
         {t("trade.sell")}
       </button>

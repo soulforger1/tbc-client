@@ -1,12 +1,16 @@
-import { holdings } from "@/data/dummy";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 
-export const Holdings = () => (
+export const Holdings = () => {
+  const { data, loading } = usePortfolio();
+  const holdings = data?.holdings ?? [];
+
+  return (
   <Card>
     <CardHeader>
       <CardTitle>Holdings</CardTitle>
-      <span className="text-xs text-ink4">{holdings.length} positions</span>
+      <span className="text-xs text-ink4">{loading ? "…" : `${holdings.length} positions`}</span>
     </CardHeader>
     <CardContent>
       <div className="space-y-3">
@@ -42,4 +46,5 @@ export const Holdings = () => (
       </div>
     </CardContent>
   </Card>
-);
+  );
+};

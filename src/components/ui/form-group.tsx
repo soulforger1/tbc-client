@@ -8,7 +8,7 @@ interface FormGroupProps {
 
 export const FormGroup = ({ label, children, className }: FormGroupProps) => (
   <div className={cn(className)}>
-    <label className="mb-1.5 block text-xs font-semibold text-ink2">{label}</label>
+    <label className="mb-1.5 block text-sm font-semibold text-ink">{label}</label>
     {children}
   </div>
 )
