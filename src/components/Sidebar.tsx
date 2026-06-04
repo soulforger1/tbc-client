@@ -1,12 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useOpenOrders } from "@/hooks/useOpenOrders";
-import { ShieldCheck } from "lucide-react";
 import {
   BarChart3,
   ClipboardList,
   History,
-  LayoutDashboard,
   Settings,
   TrendingUp,
   Wallet,
@@ -18,8 +16,6 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
 }
 
-const IS_BROKER = !!import.meta.env.VITE_BROKER_REGNO;
-
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const { t } = useTranslation();
   const { orders } = useOpenOrders();
@@ -30,14 +26,13 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   ];
 
   const secondaryNav = [
-    { id: "dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
     { id: "history", label: t("nav.history"), icon: History },
     { id: "portfolio", label: t("nav.portfolio"), icon: BarChart3 },
     { id: "wallet", label: t("nav.wallet"), icon: Wallet },
   ];
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-edge bg-card">
+    <aside className="hidden md:flex h-screen w-64 flex-col border-r border-edge bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-edge px-5">
         <img
@@ -76,22 +71,6 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
             </button>
           ))}
         </div>
-
-        {/* Broker panel — only shown when VITE_BROKER_REGNO is set */}
-        {IS_BROKER && (
-          <button
-            onClick={() => onTabChange("broker")}
-            className={cn(
-              "mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
-              activeTab === "broker"
-                ? "bg-blue-600/15 text-blue-600 dark:text-blue-400"
-                : "text-ink2 hover:bg-muted hover:text-ink",
-            )}
-          >
-            <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-            Broker Panel
-          </button>
-        )}
 
         {/* Divider */}
         <div className="my-3 flex items-center gap-2">

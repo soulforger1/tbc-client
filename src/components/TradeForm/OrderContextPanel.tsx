@@ -10,6 +10,7 @@ interface OrderContextPanelProps {
   tradeValue: number;
   commission: number | null;
   fetchingFee?: boolean;
+  orderType?: "market" | "limit";
 }
 
 const Row = ({ label, value, bold, loading }: { label: string; value: string; bold?: boolean; loading?: boolean }) => (
@@ -30,7 +31,9 @@ export const OrderContextPanel = ({
   tradeValue,
   commission,
   fetchingFee,
+  orderType = "limit",
 }: OrderContextPanelProps) => {
+  const isMarket = orderType === "market";
   const { t } = useTranslation();
 
   if (!selectedStock) {
@@ -64,9 +67,9 @@ export const OrderContextPanel = ({
         <p className="text-xs text-ink3 truncate mb-3">{selectedStock.name}</p>
         <div className="flex items-end justify-between gap-2">
           <span className="text-2xl font-bold text-ink">
-            {marketPrice != null && marketPrice > 0 ? fmt(marketPrice) : "—"}
+            {isMarket ? "—" : (marketPrice != null && marketPrice > 0 ? fmt(marketPrice) : "—")}
           </span>
-          <span className="text-xs text-ink4 mb-0.5">{ccy}</span>
+          <span className="text-xs text-ink4 mb-0.5">{isMarket ? "" : ccy}</span>
         </div>
       </div>
 
@@ -77,19 +80,23 @@ export const OrderContextPanel = ({
         </p>
         <div className="divide-y divide-edge">
           <Row label={t("trade.quantity")} value={qty > 0 ? `${qty}` : "—"} />
-          <Row label={t("trade.price")} value={(marketPrice ?? 0) > 0 ? fmt(marketPrice!) : "—"} />
-          <Row
-            label={t("trade.value")}
-            value={tradeValue > 0 ? fmt(tradeValue) : "—"}
-          />
-          <Row
-            label={t("trade.commission")}
-            value={commission != null ? fmt(commission) : "—"}
-            loading={isFeeLoading}
-          />
+          {!isMarket && (
+            <>
+              <Row label={t("trade.price")} value={(marketPrice ?? 0) > 0 ? fmt(marketPrice!) : "—"} />
+              <Row
+                label={t("trade.value")}
+                value={tradeValue > 0 ? fmt(tradeValue) : "—"}
+              />
+              <Row
+                label={t("trade.commission")}
+                value={commission != null ? fmt(commission) : "—"}
+                loading={isFeeLoading}
+              />
+            </>
+          )}
         </div>
 
-        {tradeValue > 0 && (
+        {!isMarket && tradeValue > 0 && (
           <div className="mt-3 pt-3 border-t border-edge flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-ink3">{t("trade.estTotal")}</span>
             {isFeeLoading ? (

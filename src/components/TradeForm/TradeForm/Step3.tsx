@@ -108,6 +108,7 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
           feeResult={feeResult}
           buyingPower={buyingPower}
           goodTill={goodTill}
+          orderType={orderType}
         />
 
         {formState === "success" && (

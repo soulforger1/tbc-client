@@ -38,7 +38,7 @@ export const Modal = ({
     >
       <div
         className={cn(
-          "w-full rounded-xl border border-edge bg-card shadow-2xl",
+          "w-full rounded-xl border border-edge bg-card shadow-2xl mx-4",
           widths[maxWidth],
           className,
         )}

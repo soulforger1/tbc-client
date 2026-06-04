@@ -41,9 +41,9 @@ export const TradeFilters = ({
       >
         <option value="all">{t("history.allStatus")}</option>
         <option value="open">{t("history.statusLabels.open")}</option>
+        <option value="closed">{t("history.statusLabels.closed")}</option>
         <option value="filled">{t("history.statusLabels.filled")}</option>
         <option value="partial">{t("history.statusLabels.partial")}</option>
-        <option value="nominal">{t("history.statusLabels.nominal")}</option>
         <option value="final">{t("history.statusLabels.final")}</option>
         <option value="cancelled">{t("history.statusLabels.cancelled")}</option>
       </Select>

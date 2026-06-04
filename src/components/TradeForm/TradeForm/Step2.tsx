@@ -136,6 +136,7 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
           tradeValue={tradeValue}
           commission={commission}
           fetchingFee={fetchingFee}
+          orderType={orderType}
         />
       </div>
     </div>

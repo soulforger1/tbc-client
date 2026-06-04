@@ -73,26 +73,30 @@ export const ConfirmOrderDialog = ({
           {orderType === "limit" && effectivePrice > 0 && (
             <Row label={t("trade.limitPrice")} value={fmt(effectivePrice)} />
           )}
-          <Row
-            label={t("trade.value")}
-            value={tradeValue > 0 ? fmt(tradeValue) : "—"}
-          />
-          <Row
-            label={t("trade.commission")}
-            value={
-              commission != null
-                ? feeResult
-                  ? `${fmt(commission)} (${(feeResult.feeRate * 100).toFixed(2)}%)`
-                  : fmt(commission)
-                : "—"
-            }
-          />
-          <div className="flex items-center justify-between pt-2.5 pb-1">
-            <span className="text-sm font-semibold text-ink">
-              {t("trade.estTotal")}
-            </span>
-            <span className="text-base font-bold text-ink">{fmt(total)}</span>
-          </div>
+          {orderType === "limit" && (
+            <>
+              <Row
+                label={t("trade.value")}
+                value={tradeValue > 0 ? fmt(tradeValue) : "—"}
+              />
+              <Row
+                label={t("trade.commission")}
+                value={
+                  commission != null
+                    ? feeResult
+                      ? `${fmt(commission)} (${(feeResult.feeRate * 100).toFixed(2)}%)`
+                      : fmt(commission)
+                    : "—"
+                }
+              />
+              <div className="flex items-center justify-between pt-2.5 pb-1">
+                <span className="text-sm font-semibold text-ink">
+                  {t("trade.estTotal")}
+                </span>
+                <span className="text-base font-bold text-ink">{fmt(total)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Actions */}

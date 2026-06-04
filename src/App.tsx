@@ -2,16 +2,15 @@ import { useTranslation } from "react-i18next";
 import { useQueryState, parseAsString } from "nuqs";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/BottomNav";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { OpenOrdersProvider } from "@/context/OpenOrdersContext";
-import { DashboardPage } from "@/pages/DashboardPage";
 import { TradePage } from "@/pages/TradePage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
 import { OrdersPage } from "@/pages/OrdersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
-import { BrokerPage } from "@/pages/BrokerPage";
 import { WalletPage } from "@/pages/WalletPage";
 
 const PlaceholderPage = ({ title }: { title: string }) => {
@@ -30,8 +29,11 @@ const AppInner = () => {
     parseAsString.withDefault("trade"),
   );
 
+  const handleTabChange = (tab: string) => {
+    void setActiveTab(tab);
+  };
+
   const pageMeta: Record<string, { title: string; subtitle?: string }> = {
-    dashboard: { title: t("page.dashboard"), subtitle: t("page.dashboardSub") },
     trade: { title: t("page.newTrade"), subtitle: t("page.newTradeSub") },
     history: { title: t("page.history"), subtitle: t("page.historySub") },
     portfolio: { title: t("page.portfolio"), subtitle: t("page.portfolioSub") },
@@ -44,8 +46,6 @@ const AppInner = () => {
 
   const renderPage = () => {
     switch (activeTab) {
-      case "dashboard":
-        return <DashboardPage />;
       case "trade":
         return <TradePage />;
       case "history":
@@ -58,8 +58,6 @@ const AppInner = () => {
         return <WalletPage />;
       case "settings":
         return <SettingsPage />;
-      case "broker":
-        return <BrokerPage />;
       default:
         return <PlaceholderPage title={meta.title} />;
     }
@@ -67,10 +65,13 @@ const AppInner = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header title={meta.title} subtitle={meta.subtitle} />
-        <main className="flex-1 overflow-y-auto p-6">{renderPage()}</main>
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <Header title={meta.title} subtitle={meta.subtitle} onLogoClick={() => handleTabChange("trade")} />
+        <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
+          {renderPage()}
+        </main>
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
     </div>
   );

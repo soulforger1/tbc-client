@@ -2,7 +2,6 @@ import type { Trade } from "@/data/types";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 const REGNO = import.meta.env.VITE_REGNO ?? "";
-const BROKER_REGNO = import.meta.env.VITE_BROKER_REGNO ?? "";
 
 function reqHeaders(regno = REGNO): HeadersInit {
   return {
@@ -146,20 +145,3 @@ export const api = {
   },
 };
 
-export interface BrokerOrder extends Trade {
-  customerId: number;
-  customerRegno: string;
-}
-
-export interface BrokerNominalPayload {
-  filledPrice: number;
-  rate: number;
-}
-
-export const brokerApi = {
-  getOrders: () => get<BrokerOrder[]>("/broker/orders", BROKER_REGNO),
-  fileOrder: (id: string) => patch<BrokerOrder>(`/broker/orders/${id}/filing`, undefined, BROKER_REGNO),
-  nominalOrder: (id: string, payload: BrokerNominalPayload) =>
-    patch<BrokerOrder>(`/broker/orders/${id}/nominal`, payload, BROKER_REGNO),
-  closeOrder: (id: string) => patch<BrokerOrder>(`/broker/orders/${id}/close`, undefined, BROKER_REGNO),
-};

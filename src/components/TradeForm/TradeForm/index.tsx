@@ -67,11 +67,8 @@ export const TradeForm = ({ onOrderCreated }: TradeFormProps) => {
 
   useEffect(() => {
     if (formData.formState !== "success") return;
-    const t = setTimeout(() => {
-      setFormData(TradeFormDefaultValues);
-      setStep(1);
-    }, 1500);
-    return () => clearTimeout(t);
+    setFormData(TradeFormDefaultValues);
+    setStep(1);
   }, [formData.formState]);
 
   const handleSideChange = (newSide: "buy" | "sell") =>

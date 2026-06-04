@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { PenLine, X } from "lucide-react";
-import { canCancel } from "@/data/trades";
+import { Lock, PenLine, X } from "lucide-react";
 import type { Trade } from "@/data/types";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -16,8 +15,13 @@ interface OrderRowProps {
 
 export const OrderRow = ({ trade, onCancel, onAmend }: OrderRowProps) => {
   const { t } = useTranslation();
-  const locked = !canCancel(trade.status);
-  const tradeVal = trade.price != null ? trade.quantity * trade.price : null;
+  const locked = trade.locked;
+  const isMarket = trade.orderType === "market";
+
+  const displayPrice = isMarket ? trade.filledPrice : trade.price;
+  const displayTradeVal = isMarket
+    ? trade.tradeValue
+    : trade.price != null ? trade.quantity * trade.price : null;
 
   return (
     <TableRow>
@@ -32,48 +36,49 @@ export const OrderRow = ({ trade, onCancel, onAmend }: OrderRowProps) => {
       </Td>
       <Td className="text-xs capitalize text-ink3">{trade.orderType}</Td>
       <Td className="text-ink2">
-        {trade.price != null ? (
-          formatCurrency(trade.price)
+        {displayPrice != null ? (
+          formatCurrency(displayPrice)
         ) : (
-          <span className="text-ink4 text-xs">{t("trade.market")}</span>
+          <span className="text-ink4 text-xs">—</span>
         )}
       </Td>
       <Td className="text-ink2">{trade.quantity}</Td>
       <Td className="text-ink2">
-        {tradeVal != null ? (
-          formatCurrency(tradeVal)
+        {displayTradeVal != null ? (
+          formatCurrency(displayTradeVal)
         ) : (
-          <span className="text-ink4 text-xs">{t("trade.automatically")}</span>
+          <span className="text-ink4 text-xs">—</span>
         )}
       </Td>
       <Td className="text-xs text-ink3">{goodTillLabel(trade.goodTill)}</Td>
       <Td>
-        <StatusStepper status={trade.status} />
+        <StatusStepper step={trade.step} status={trade.status} />
       </Td>
-      <Td center>
-        <Button
-          onClick={() => onCancel(trade)}
-          disabled={locked}
-          variant="destructive"
-          size="sm"
-          title={locked ? t("orders.cancelLocked") : t("orders.cancel")}
-        >
-          <X className="h-3 w-3" />
-          {t("orders.cancel")}
-        </Button>
-      </Td>
-      <Td center>
-        <Button
-          onClick={() => onAmend(trade)}
-          disabled={locked}
-          variant="warning"
-          size="sm"
-          title={locked ? t("orders.amendLocked") : t("orders.amend")}
-        >
-          <PenLine className="h-3 w-3" />
-          {t("orders.amend")}
-        </Button>
-      </Td>
+      {locked ? (
+        <Td center colSpan={2}>
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-500">
+            <Lock className="h-3 w-3" />
+            {t("orders.locked")}
+          </span>
+        </Td>
+      ) : (
+        <>
+          <Td center>
+            <Button onClick={() => onCancel(trade)} variant="destructive" size="sm">
+              <X className="h-3 w-3" />
+              {t("orders.cancel")}
+            </Button>
+          </Td>
+          <Td center>
+            {!isMarket && (
+              <Button onClick={() => onAmend(trade)} variant="warning" size="sm">
+                <PenLine className="h-3 w-3" />
+                {t("orders.amend")}
+              </Button>
+            )}
+          </Td>
+        </>
+      )}
     </TableRow>
   );
 };

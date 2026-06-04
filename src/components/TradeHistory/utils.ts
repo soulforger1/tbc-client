@@ -5,10 +5,10 @@ export const STATUS_VARIANT: Record<
   "success" | "warning" | "outline" | "secondary" | "default"
 > = {
   open: "outline",
+  closed: "success",
   filled: "success",
   cancelled: "secondary",
   partial: "warning",
-  nominal: "default",
   final: "success",
 };
 

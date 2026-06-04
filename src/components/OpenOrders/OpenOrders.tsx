@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Lock, PenLine, X } from "lucide-react";
 import type { Trade } from "@/data/types";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Alert } from "../ui/alert";
 import { Table, TableHead, Th, TableBody } from "../ui/table";
+import { Button } from "../ui/button";
 import { useToast } from "../Toast";
 import { useOpenOrders } from "@/hooks/useOpenOrders";
 import { OrderRow } from "./OrderRow";
 import { AmendModal } from "./AmendModal";
 import { CancelModal } from "./CancelModal";
+import { StatusStepper } from "./StatusStepper";
+import { goodTillLabel } from "./utils";
+import { formatCurrency } from "@/lib/utils";
 
 export const OpenOrders = () => {
   const { t } = useTranslation();
@@ -58,29 +63,46 @@ export const OpenOrders = () => {
               {t("orders.noOrders")}
             </div>
           ) : (
-            <Table>
-              <TableHead>
-                <Th>{t("orders.cols.symbol")}</Th>
-                <Th>{t("orders.cols.orderType")}</Th>
-                <Th>{t("orders.cols.price")}</Th>
-                <Th>{t("orders.cols.qty")}</Th>
-                <Th>{t("orders.cols.tradeValue")}</Th>
-                <Th>{t("orders.cols.goodTill")}</Th>
-                <Th>{t("orders.cols.status")}</Th>
-                <Th center />
-                <Th center />
-              </TableHead>
-              <TableBody>
+            <>
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHead>
+                    <Th>{t("orders.cols.symbol")}</Th>
+                    <Th>{t("orders.cols.orderType")}</Th>
+                    <Th>{t("orders.cols.price")}</Th>
+                    <Th>{t("orders.cols.qty")}</Th>
+                    <Th>{t("orders.cols.tradeValue")}</Th>
+                    <Th>{t("orders.cols.goodTill")}</Th>
+                    <Th>{t("orders.cols.status")}</Th>
+                    <Th center />
+                    <Th center />
+                  </TableHead>
+                  <TableBody>
+                    {orders.map((trade) => (
+                      <OrderRow
+                        key={trade.id}
+                        trade={trade}
+                        onCancel={setCancelTarget}
+                        onAmend={setAmendTarget}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="space-y-3 md:hidden">
                 {orders.map((trade) => (
-                  <OrderRow
+                  <OrderCard
                     key={trade.id}
                     trade={trade}
                     onCancel={setCancelTarget}
                     onAmend={setAmendTarget}
                   />
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
           <Alert variant="muted" className="mt-4">
             {t("orders.rule")}
@@ -99,10 +121,108 @@ export const OpenOrders = () => {
       {amendTarget && (
         <AmendModal
           trade={amendTarget}
-          onConfirm={(qty, price) => handleAmendConfirm(amendTarget.id, qty, price)}
+          onConfirm={(qty, price) =>
+            handleAmendConfirm(amendTarget.id, qty, price)
+          }
           onClose={() => setAmendTarget(null)}
         />
       )}
     </>
+  );
+};
+
+interface OrderCardProps {
+  trade: Trade;
+  onCancel: (trade: Trade) => void;
+  onAmend: (trade: Trade) => void;
+}
+
+const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
+  const { t } = useTranslation();
+  const isMarket = trade.orderType === "market";
+  const displayPrice = isMarket ? trade.filledPrice : trade.price;
+  const displayTradeVal = isMarket
+    ? trade.tradeValue
+    : trade.price != null ? trade.quantity * trade.price : null;
+
+  return (
+    <div className="rounded-xl border border-edge bg-muted/40 p-3 space-y-3">
+      {/* Symbol + side */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-semibold text-ink">{trade.symbol}</span>
+        <span
+          className={`text-xs font-bold ${trade.side === "buy" ? "text-emerald-500" : "text-red-500"}`}
+        >
+          {trade.side.toUpperCase()}
+        </span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-ink3 capitalize border border-edge">
+          {trade.orderType}
+        </span>
+        <span className="text-xs text-ink4">
+          {goodTillLabel(trade.goodTill)}
+        </span>
+      </div>
+      {/* Status stepper on its own row */}
+      <StatusStepper step={trade.step} status={trade.status} />
+
+      {/* Values row */}
+      <div className="grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <p className="text-ink4">{t("orders.cols.price")}</p>
+          <p className="mt-0.5 font-medium text-ink">
+            {displayPrice != null ? (
+              formatCurrency(displayPrice)
+            ) : (
+              <span className="text-ink4">—</span>
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="text-ink4">{t("orders.cols.qty")}</p>
+          <p className="mt-0.5 font-medium text-ink">{trade.quantity}</p>
+        </div>
+        <div>
+          <p className="text-ink4">{t("orders.cols.tradeValue")}</p>
+          <p className="mt-0.5 font-medium text-ink">
+            {displayTradeVal != null ? (
+              formatCurrency(displayTradeVal)
+            ) : (
+              <span className="text-ink4">—</span>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      {trade.locked ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500">
+          <Lock className="h-3 w-3" />
+          {t("orders.locked")}
+        </span>
+      ) : (
+        <div className="flex gap-2">
+          <Button
+            onClick={() => onCancel(trade)}
+            variant="destructive"
+            size="sm"
+            className={isMarket ? "flex-1" : "flex-1"}
+          >
+            <X className="h-3 w-3" />
+            {t("orders.cancel")}
+          </Button>
+          {!isMarket && (
+            <Button
+              onClick={() => onAmend(trade)}
+              variant="warning"
+              size="sm"
+              className="flex-1"
+            >
+              <PenLine className="h-3 w-3" />
+              {t("orders.amend")}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 };

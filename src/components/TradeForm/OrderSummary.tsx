@@ -11,6 +11,7 @@ interface OrderSummaryProps {
   feeResult: FeeResponse | null;
   buyingPower: number | null;
   goodTill: string;
+  orderType?: "market" | "limit";
 }
 
 const SummaryRow = ({
@@ -40,8 +41,10 @@ export const OrderSummary = ({
   feeResult,
   buyingPower,
   goodTill,
+  orderType = "limit",
 }: OrderSummaryProps) => {
   const { t } = useTranslation();
+  const isMarket = orderType === "market";
 
   const ccy = selectedStock?.ccy ?? "USD";
   const fmt = (v: number) => formatLocalCurrency(v, ccy);
@@ -66,28 +69,36 @@ export const OrderSummary = ({
         <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink3">
           {t("trade.createOrder")}
         </p>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+        <div className="grid grid-cols-1 gap-y-2.5 md:grid-cols-2 md:gap-x-6">
           <SummaryRow label={t("trade.currency")} value={ccy} />
           <SummaryRow
             label={t("trade.buyingPower")}
             value={buyingPower != null ? formatCurrency(buyingPower) : "—"}
             highlight
           />
-          <SummaryRow label={t("trade.price")} value={fmt(marketPrice)} />
-          <SummaryRow
-            label={t("trade.value")}
-            value={tradeValue > 0 ? fmt(tradeValue) : "—"}
-          />
+          {!isMarket && (
+            <>
+              <SummaryRow label={t("trade.price")} value={fmt(marketPrice)} />
+              <SummaryRow
+                label={t("trade.value")}
+                value={tradeValue > 0 ? fmt(tradeValue) : "—"}
+              />
+            </>
+          )}
           <SummaryRow label={t("trade.goodTill")} value={goodTill} />
-          <SummaryRow label={t("trade.commission")} value={commissionLabel} />
-          <SummaryRow
-            label={t("trade.tradeValue")}
-            value={
-              tradeValue > 0 && commission != null
-                ? fmt(tradeValue + commission)
-                : "—"
-            }
-          />
+          {!isMarket && (
+            <>
+              <SummaryRow label={t("trade.commission")} value={commissionLabel} />
+              <SummaryRow
+                label={t("trade.tradeValue")}
+                value={
+                  tradeValue > 0 && commission != null
+                    ? fmt(tradeValue + commission)
+                    : "—"
+                }
+              />
+            </>
+          )}
           <SummaryRow label={t("trade.rate")} value={rateLabel} />
         </div>
         <div className="mt-3 pt-2.5 border-t border-edge flex items-center gap-1.5">
@@ -98,20 +109,22 @@ export const OrderSummary = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 pb-4 text-sm text-ink3">
-        <Info className="h-4 w-4 shrink-0" />
-        {t("trade.marketPrice")}:{" "}
-        <span className="text-ink2">{fmt(marketPrice)}</span>
-        {tradeValue > 0 && commission != null && (
-          <>
-            {" "}
-            · {t("trade.estTotal")}:{" "}
-            <span className="font-semibold text-ink">
-              {fmt(tradeValue + commission)}
-            </span>
-          </>
-        )}
-      </div>
+      {!isMarket && (
+        <div className="flex items-center gap-1.5 pb-4 text-sm text-ink3">
+          <Info className="h-4 w-4 shrink-0" />
+          {t("trade.marketPrice")}:{" "}
+          <span className="text-ink2">{fmt(marketPrice)}</span>
+          {tradeValue > 0 && commission != null && (
+            <>
+              {" "}
+              · {t("trade.estTotal")}:{" "}
+              <span className="font-semibold text-ink">
+                {fmt(tradeValue + commission)}
+              </span>
+            </>
+          )}
+        </div>
+      )}
     </>
   );
 };
