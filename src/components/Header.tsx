@@ -4,15 +4,18 @@ import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { SearchPanel } from "./SearchPanel";
 import { useOpenOrders } from "@/hooks/useOpenOrders";
+import type { Stock } from "@/lib/api";
 import tbcLogo from "@/assets/tbc-logo.svg";
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
   onLogoClick?: () => void;
+  onNavigate?: (tab: string) => void;
+  onSelectStock?: (stock: Stock) => void;
 }
 
-export const Header = ({ title, subtitle, onLogoClick }: HeaderProps) => {
+export const Header = ({ title, subtitle, onLogoClick, onNavigate, onSelectStock }: HeaderProps) => {
   const { t, i18n } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -32,11 +35,12 @@ export const Header = ({ title, subtitle, onLogoClick }: HeaderProps) => {
     <>
       <header className="relative flex h-14 items-center justify-between border-b border-edge bg-card/80 px-4 backdrop-blur-sm md:h-16 md:px-6">
         {/* Mobile: logo button */}
-        <button
-          onClick={onLogoClick}
-          className="md:hidden focus:outline-none"
-        >
-          <img src={tbcLogo} alt="TBC" className="h-6 w-auto dark:invert-0 invert" />
+        <button onClick={onLogoClick} className="md:hidden focus:outline-none">
+          <img
+            src={tbcLogo}
+            alt="TBC"
+            className="h-6 w-auto dark:invert-0 invert"
+          />
         </button>
         {/* Desktop: page title */}
         <div className="hidden md:block">
@@ -74,7 +78,13 @@ export const Header = ({ title, subtitle, onLogoClick }: HeaderProps) => {
         </div>
       </header>
 
-      {searchOpen && <SearchPanel onClose={() => setSearchOpen(false)} />}
+      {searchOpen && (
+        <SearchPanel
+          onClose={() => setSearchOpen(false)}
+          onNavigate={onNavigate}
+          onSelectStock={onSelectStock}
+        />
+      )}
     </>
   );
 };

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Disable double-tap zoom on touch devices */
+html, body {
+  touch-action: manipulation;
+}
+
 /* Class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
 

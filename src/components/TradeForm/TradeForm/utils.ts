@@ -10,6 +10,7 @@ export const TradeFormDefaultValues = {
   orderType: "market",
   quantity: "",
   limitPrice: "",
+  goodTill: "gtc",
   formState: "idle",
   errorMessage: null,
   feeResult: null,
@@ -25,6 +26,7 @@ export type TradeFormType = {
   orderType: "market" | "limit";
   quantity: string;
   limitPrice: string;
+  goodTill: "day" | "gtc";
   formState: FormState;
   errorMessage: string | null;
   feeResult: FeeResponse | null;

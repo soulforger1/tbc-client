@@ -152,6 +152,8 @@ const en = {
     nResults: "{{count}} result",
     nResults_other: "{{count}} results",
     typeToSearch: "Type to search orders or symbols",
+    stocksSection: "Stocks",
+    ordersSection: "Orders",
   },
 } as const;
 

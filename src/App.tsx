@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryState, parseAsString } from "nuqs";
+import type { Stock } from "@/lib/api";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -28,6 +30,7 @@ const AppInner = () => {
     "tab",
     parseAsString.withDefault("trade"),
   );
+  const [initialStock, setInitialStock] = useState<Stock | null>(null);
 
   const handleTabChange = (tab: string) => {
     void setActiveTab(tab);
@@ -44,10 +47,14 @@ const AppInner = () => {
 
   const meta = pageMeta[activeTab] ?? { title: activeTab };
 
+  useEffect(() => {
+    document.title = `${meta.title} — TBC Trade`;
+  }, [meta.title]);
+
   const renderPage = () => {
     switch (activeTab) {
       case "trade":
-        return <TradePage />;
+        return <TradePage initialStock={initialStock} onStockConsumed={() => setInitialStock(null)} />;
       case "history":
         return <HistoryPage />;
       case "portfolio":
@@ -67,7 +74,13 @@ const AppInner = () => {
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
-        <Header title={meta.title} subtitle={meta.subtitle} onLogoClick={() => handleTabChange("trade")} />
+        <Header
+          title={meta.title}
+          subtitle={meta.subtitle}
+          onLogoClick={() => handleTabChange("trade")}
+          onNavigate={handleTabChange}
+          onSelectStock={(stock) => { setInitialStock(stock); handleTabChange("trade"); }}
+        />
         <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
           {renderPage()}
         </main>

@@ -15,12 +15,17 @@ type TradeFormStep2Props = {
 
 export const EnterTradeFormAmount = (props: TradeFormStep2Props) => {
   const { formData, setFormData } = props;
-  const { quantity, orderType, limitPrice, stock, side, holdingQty } = formData;
+  const { quantity, orderType, limitPrice, goodTill, stock, side, holdingQty, feeResult } = formData;
   const { t } = useTranslation();
 
   const marketPrice = stock?.price ?? 0;
   const qty = parseFloat(quantity) || 0;
   const overHolding = side === "sell" && holdingQty != null && qty > holdingQty;
+  const ccy = stock?.ccy ?? "USD";
+  const rate = feeResult?.rate;
+  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
+  const limitPriceNum = parseFloat(limitPrice) || 0;
+  const placeholderPrice = isNonUsdNonHkd && rate ? marketPrice / rate : marketPrice;
 
   const setQuantity = (value: string) =>
     setFormData((prev) => ({ ...prev, quantity: value }));
@@ -30,6 +35,9 @@ export const EnterTradeFormAmount = (props: TradeFormStep2Props) => {
 
   const setLimitPrice = (value: string) =>
     setFormData((prev) => ({ ...prev, limitPrice: value }));
+
+  const setGoodTill = (value: "day" | "gtc") =>
+    setFormData((prev) => ({ ...prev, goodTill: value }));
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -63,20 +71,32 @@ export const EnterTradeFormAmount = (props: TradeFormStep2Props) => {
         </Select>
       </FormGroup>
       {orderType === "limit" && (
-        <FormGroup label={t("trade.limitPrice")} className="col-span-2">
-          <Input
-            placeholder={marketPrice > 0 ? marketPrice.toFixed(2) : "0.00"}
-            value={limitPrice}
-            onChange={(e) =>
-              setLimitPrice(
-                e.target.value
-                  .replace(/[^\d.]/g, "")
-                  .replace(/^(\d*\.?\d*).*$/, "$1"),
-              )
-            }
-            className="h-9 text-sm font-semibold"
-          />
-        </FormGroup>
+        <>
+          <FormGroup label={t("trade.limitPrice")}>
+            <Input
+              placeholder={placeholderPrice > 0 ? placeholderPrice.toFixed(2) : "0.00"}
+              value={limitPrice}
+              onChange={(e) =>
+                setLimitPrice(
+                  e.target.value
+                    .replace(/[^\d.]/g, "")
+                    .replace(/^(\d*\.?\d*).*$/, "$1"),
+                )
+              }
+              className="h-9 text-sm font-semibold"
+            />
+          </FormGroup>
+          <FormGroup label={t("trade.goodTill")}>
+            <Select
+              value={goodTill}
+              onChange={(e) => setGoodTill(e.target.value as "day" | "gtc")}
+              className="h-9 text-sm font-semibold"
+            >
+              <option value="gtc">{t("trade.gtc")}</option>
+              <option value="day">{t("trade.dayGoodTill")}</option>
+            </Select>
+          </FormGroup>
+        </>
       )}
     </div>
   );
@@ -91,8 +111,14 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
   const marketPrice = stock?.price ?? 0;
   const qty = parseFloat(quantity) || 0;
   const limitPriceNum = parseFloat(limitPrice) || 0;
+  const ccy = stock?.ccy ?? "USD";
+  const rate = feeResult?.rate;
+  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
+  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
   const effectivePrice =
-    orderType === "limit" && limitPriceNum > 0 ? limitPriceNum : marketPrice;
+    orderType === "limit" && limitPriceNum > 0
+      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
+      : marketPrice;
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
   const overHolding = side === "sell" && holdingQty != null && qty > holdingQty;
@@ -137,6 +163,7 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
           commission={commission}
           fetchingFee={fetchingFee}
           orderType={orderType}
+          feeResult={feeResult}
         />
       </div>
     </div>

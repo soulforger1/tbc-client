@@ -153,6 +153,8 @@ const mn = {
     nResults: "{{count}} үр дүн",
     nResults_other: "{{count}} үр дүн",
     typeToSearch: "Хувьцаа эсвэл захиалга хайхын тулд бичнэ үү",
+    stocksSection: "Хувьцаа",
+    ordersSection: "Захиалга",
   },
 } as const;
 

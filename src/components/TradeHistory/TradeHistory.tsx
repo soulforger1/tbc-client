@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
-import { type Trade, type TradeStatus, type TradeSide } from "@/data/dummy";
+import { type Trade, type TradeStatus, type TradeSide } from "@/data/types";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Table, TableHead, Th, TableBody } from "../ui/table";
@@ -27,13 +27,13 @@ export const TradeHistory = () => {
     parseAsStringLiteral(SIDES).withDefault("all"),
   );
 
-  console.log(trades);
-
+  const q = search.toLowerCase();
   const filtered = trades.filter((trade: Trade) => {
     const matchSearch =
-      trade.symbol.toLowerCase().includes(search.toLowerCase()) ||
-      trade.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || trade.status === statusFilter;
+      !q ||
+      (trade.symbol ?? "").toLowerCase().includes(q) ||
+      (trade.id ?? "").toLowerCase().includes(q);
+    const matchStatus = statusFilter === "all" || (trade.status ?? "") === statusFilter;
     const matchSide = sideFilter === "all" || trade.side === sideFilter;
     return matchSearch && matchStatus && matchSide;
   });

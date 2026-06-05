@@ -14,7 +14,7 @@ type TradeFormStep1Props = {
 
 export const TradeFormStep1 = (props: TradeFormStep1Props) => {
   const { formData, setFormData, setStep } = props;
-  const { symbol, stock, quantity, limitPrice, orderType, side } = formData;
+  const { symbol, stock, quantity, limitPrice, orderType, side, buyingPower } = formData;
   const { feeResult, fetchingFee } = formData;
   const { t } = useTranslation();
 
@@ -90,6 +90,7 @@ export const TradeFormStep1 = (props: TradeFormStep1Props) => {
           commission={commission}
           fetchingFee={fetchingFee}
           orderType={orderType}
+          buyingPower={buyingPower}
         />
       </div>
     </div>

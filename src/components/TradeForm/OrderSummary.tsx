@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 import { formatCurrency, formatLocalCurrency } from "@/lib/utils";
+
 import type { Stock, FeeResponse } from "@/lib/api";
 
 interface OrderSummaryProps {
@@ -47,7 +48,11 @@ export const OrderSummary = ({
   const isMarket = orderType === "market";
 
   const ccy = selectedStock?.ccy ?? "USD";
-  const fmt = (v: number) => formatLocalCurrency(v, ccy);
+  const rate = feeResult?.rate;
+  const convertingToUsd = ccy !== "USD" && ccy !== "HKD" && rate != null && rate > 0;
+  const displayCcy = convertingToUsd ? "USD" : ccy;
+  const fmt = (v: number) =>
+    convertingToUsd ? formatCurrency(v / rate!) : formatLocalCurrency(v, ccy);
 
   const rateLabel =
     feeResult && feeResult.rate !== 1
@@ -70,7 +75,7 @@ export const OrderSummary = ({
           {t("trade.createOrder")}
         </p>
         <div className="grid grid-cols-1 gap-y-2.5 md:grid-cols-2 md:gap-x-6">
-          <SummaryRow label={t("trade.currency")} value={ccy} />
+          <SummaryRow label={t("trade.currency")} value={convertingToUsd ? `${ccy} → USD` : ccy} />
           <SummaryRow
             label={t("trade.buyingPower")}
             value={buyingPower != null ? formatCurrency(buyingPower) : "—"}

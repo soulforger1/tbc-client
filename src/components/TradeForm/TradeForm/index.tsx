@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardHeader, CardTitle, CardContent } from "../../ui/card";
 import { api } from "@/lib/api";
+import type { Stock } from "@/lib/api";
 import type { Trade } from "@/data/types";
 import { SideSwitcher } from "../SideSwitcher";
 import { StepIndicator } from "../StepIndicator";
@@ -15,15 +16,17 @@ type Step = 1 | 2 | 3;
 
 interface TradeFormProps {
   onOrderCreated?: (order: Trade) => void;
+  initialStock?: Stock | null;
+  onStockConsumed?: () => void;
 }
 
-export const TradeForm = ({ onOrderCreated }: TradeFormProps) => {
+export const TradeForm = ({ onOrderCreated, initialStock, onStockConsumed }: TradeFormProps) => {
   const { t } = useTranslation();
   const [step, setStep] = useState<Step>(1);
   const [formData, setFormData] = useState<TradeFormType>(
     TradeFormDefaultValues,
   );
-  const { side, stock, quantity, limitPrice, orderType } = formData;
+  const { side, stock, quantity, limitPrice, orderType, feeResult } = formData;
   const feeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -35,11 +38,34 @@ export const TradeForm = ({ onOrderCreated }: TradeFormProps) => {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!initialStock) return;
+    setFormData((prev) => ({
+      ...prev,
+      side: "buy",
+      stock: initialStock,
+      symbol: initialStock.prefix,
+      quantity: "",
+      limitPrice: "",
+      feeResult: null,
+    }));
+    setStep(1);
+    onStockConsumed?.();
+  }, [initialStock]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const marketPrice = stock?.price ?? 0;
   const qty = parseFloat(quantity) || 0;
   const limitPriceNum = parseFloat(limitPrice) || 0;
+  const ccy = stock?.ccy ?? "USD";
+  const rate = feeResult?.rate;
+  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
+  // limit price is entered in USD for non-USD/non-HKD stocks — convert to local currency
+  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
+  // if rate not yet known, fall back to market price so the first fee fetch bootstraps the rate
   const effectivePrice =
-    orderType === "limit" && limitPriceNum > 0 ? limitPriceNum : marketPrice;
+    orderType === "limit" && limitPriceNum > 0
+      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
+      : marketPrice;
 
   useEffect(() => {
     if (!stock || qty <= 0 || effectivePrice <= 0) {

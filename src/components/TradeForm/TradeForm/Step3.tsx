@@ -9,6 +9,7 @@ import { OrderSummary } from "../OrderSummary";
 import type { TradeFormType } from "./utils";
 import { ConfirmOrderDialog } from "./ConfirmOrderDialog";
 import { EnterTradeFormAmount } from "./Step2";
+import { formatLocalCurrency, formatCurrency } from "@/lib/utils";
 
 type TradeFormStep3Props = {
   formData: TradeFormType;
@@ -19,7 +20,7 @@ type TradeFormStep3Props = {
 
 export const TradeFormStep3 = (props: TradeFormStep3Props) => {
   const { formData, setStep, onOrderCreated } = props;
-  const { symbol, formState, side, orderType, stock, feeResult } = formData;
+  const { symbol, formState, side, orderType, stock, feeResult, goodTill } = formData;
   const { quantity, limitPrice, buyingPower, errorMessage } = formData;
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -27,12 +28,22 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
   const marketPrice = stock?.price ?? 0;
   const qty = parseFloat(quantity) || 0;
   const limitPriceNum = parseFloat(limitPrice) || 0;
+  const ccy = stock?.ccy ?? "USD";
+  const rate = feeResult?.rate;
+  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
+  const convertingToUsd = isNonUsdNonHkd && rate != null && rate > 0;
+  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
   const effectivePrice =
-    orderType === "limit" && limitPriceNum > 0 ? limitPriceNum : marketPrice;
+    orderType === "limit" && limitPriceNum > 0
+      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
+      : marketPrice;
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
-  const goodTill =
-    orderType === "market" ? t("trade.dayGoodTill") : t("trade.gtc");
+  // limit price is already in USD when convertingToUsd — no division by rate
+  const fmtPrice = (v: number) =>
+    convertingToUsd ? formatCurrency(v) : formatLocalCurrency(v, ccy);
+  const goodTillLabel =
+    orderType === "market" || goodTill === "day" ? t("trade.dayGoodTill") : t("trade.gtc");
 
   const { setFormData } = props;
   const handleSubmit = async () => {
@@ -46,9 +57,9 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
         quantity: qty,
         price:
           orderType === "limit" && limitPriceNum > 0
-            ? limitPriceNum
+            ? limitPriceLocal
             : undefined,
-        goodTill: orderType === "market" ? "day" : "gtc",
+        goodTill: orderType === "market" ? "day" : goodTill,
       });
       onOrderCreated?.(created);
       setFormData((prev) => ({ ...prev, formState: "success", errorMessage: null }));
@@ -94,7 +105,7 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
             <>
               <span className="text-ink4">·</span>
               <span className="text-ink2">
-                {t("trade.limitPrice")} ${limitPriceNum.toFixed(2)}
+                {t("trade.limitPrice")} {fmtPrice(limitPriceNum)}
               </span>
             </>
           )}
@@ -107,7 +118,7 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
           commission={commission}
           feeResult={feeResult}
           buyingPower={buyingPower}
-          goodTill={goodTill}
+          goodTill={goodTillLabel}
           orderType={orderType}
         />
 

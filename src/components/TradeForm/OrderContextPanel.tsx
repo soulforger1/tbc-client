@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { TrendingUp, Loader2 } from "lucide-react";
-import { formatLocalCurrency } from "@/lib/utils";
-import type { Stock } from "@/lib/api";
+import { formatLocalCurrency, formatCurrency } from "@/lib/utils";
+import type { Stock, FeeResponse } from "@/lib/api";
 
 interface OrderContextPanelProps {
   selectedStock: Stock | null;
@@ -11,6 +11,8 @@ interface OrderContextPanelProps {
   commission: number | null;
   fetchingFee?: boolean;
   orderType?: "market" | "limit";
+  feeResult?: FeeResponse | null;
+  buyingPower?: number | null;
 }
 
 const Row = ({ label, value, bold, loading }: { label: string; value: string; bold?: boolean; loading?: boolean }) => (
@@ -32,25 +34,39 @@ export const OrderContextPanel = ({
   commission,
   fetchingFee,
   orderType = "limit",
+  feeResult,
+  buyingPower,
 }: OrderContextPanelProps) => {
   const isMarket = orderType === "market";
   const { t } = useTranslation();
 
   if (!selectedStock) {
     return (
-      <div className="rounded-xl border border-edge bg-muted/30 h-full flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-          <TrendingUp className="h-5 w-5 text-ink4" />
+      <div className="rounded-xl border border-edge bg-muted/30 h-full flex flex-col px-6 py-6 gap-4">
+        {buyingPower != null && (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-xs font-medium text-emerald-400">{t("trade.buyingPower")}</span>
+            <span className="text-sm font-bold text-emerald-400">{formatCurrency(buyingPower)}</span>
+          </div>
+        )}
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-ink4" />
+          </div>
+          <p className="text-sm text-ink4 leading-relaxed">
+            Select a stock to see price and order details here
+          </p>
         </div>
-        <p className="text-sm text-ink4 leading-relaxed">
-          Select a stock to see price and order details here
-        </p>
       </div>
     );
   }
 
   const ccy = selectedStock.ccy;
-  const fmt = (v: number) => formatLocalCurrency(v, ccy);
+  const rate = feeResult?.rate;
+  const convertingToUsd = ccy !== "USD" && ccy !== "HKD" && rate != null && rate > 0;
+  const displayCcy = convertingToUsd ? "USD" : ccy;
+  const fmt = (v: number) =>
+    convertingToUsd ? formatCurrency(v / rate!) : formatLocalCurrency(v, ccy);
   const isFeeLoading = fetchingFee && qty > 0 && (marketPrice ?? 0) > 0;
   const total = commission != null ? tradeValue + commission : null;
 
@@ -69,7 +85,7 @@ export const OrderContextPanel = ({
           <span className="text-2xl font-bold text-ink">
             {isMarket ? "—" : (marketPrice != null && marketPrice > 0 ? fmt(marketPrice) : "—")}
           </span>
-          <span className="text-xs text-ink4 mb-0.5">{isMarket ? "" : ccy}</span>
+          <span className="text-xs text-ink4 mb-0.5">{isMarket ? "" : displayCcy}</span>
         </div>
       </div>
 
@@ -78,6 +94,12 @@ export const OrderContextPanel = ({
         <p className="text-xs font-semibold uppercase tracking-wider text-ink4 mb-1">
           {t("trade.createOrder")}
         </p>
+        {buyingPower != null && (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 mb-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-xs font-medium text-emerald-400">{t("trade.buyingPower")}</span>
+            <span className="text-sm font-bold text-emerald-400">{formatCurrency(buyingPower)}</span>
+          </div>
+        )}
         <div className="divide-y divide-edge">
           <Row label={t("trade.quantity")} value={qty > 0 ? `${qty}` : "—"} />
           {!isMarket && (
