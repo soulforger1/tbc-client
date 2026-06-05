@@ -145,7 +145,6 @@ const en = {
     mongolianSub: "Mongolian (MN)",
   },
   common: {
-    live: "Live",
     search: "Search orders",
     refresh: "Refresh data",
     noResults: 'No results for "{{query}}"',

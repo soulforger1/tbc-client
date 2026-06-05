@@ -3,6 +3,7 @@ import { RefreshCw, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { SearchPanel } from "./SearchPanel";
+import { useOpenOrders } from "@/hooks/useOpenOrders";
 import tbcLogo from "@/assets/tbc-logo.svg";
 
 interface HeaderProps {
@@ -15,11 +16,16 @@ export const Header = ({ title, subtitle, onLogoClick }: HeaderProps) => {
   const { t, i18n } = useTranslation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { refetch } = useOpenOrders();
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
@@ -65,10 +71,6 @@ export const Header = ({ title, subtitle, onLogoClick }: HeaderProps) => {
           <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-semibold uppercase text-ink3">
             {i18n.language}
           </span>
-          <span className="text-xs text-ink4">{t("common.live")}</span>
-          <span
-            className={`h-2 w-2 rounded-full ${refreshing ? "bg-amber-400" : "bg-emerald-500 animate-pulse"}`}
-          />
         </div>
       </header>
 

@@ -146,7 +146,6 @@ const mn = {
     mongolianSub: "Монгол хэл (MN)",
   },
   common: {
-    live: "Шууд",
     search: "Захиалга хайх",
     refresh: "Мэдээлэл шинэчлэх",
     noResults: '"{{query}}" олдсонгүй',

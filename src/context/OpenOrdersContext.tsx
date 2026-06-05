@@ -7,23 +7,35 @@ interface OpenOrdersContextValue {
   loading: boolean;
   error: string | null;
   addOrder: (order: Trade) => void;
+  refetch: () => Promise<void>;
   cancel: (id: string) => Promise<void>;
   amend: (id: string, qty: number, price: number) => Promise<void>;
 }
 
 const OpenOrdersContext = createContext<OpenOrdersContextValue | null>(null);
 
-export const OpenOrdersProvider = ({ children }: { children: React.ReactNode }) => {
+export const OpenOrdersProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [orders, setOrders] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refetch = async () => {
+    try {
+      const data = await api.getOpenOrders();
+      setOrders(data);
+      setError(null);
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    }
+  };
+
   useEffect(() => {
-    api
-      .getOpenOrders()
-      .then(setOrders)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
+    setLoading(true);
+    refetch().finally(() => setLoading(false));
   }, []);
 
   const addOrder = (order: Trade) => setOrders((prev) => [order, ...prev]);
@@ -39,7 +51,9 @@ export const OpenOrdersProvider = ({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <OpenOrdersContext.Provider value={{ orders, loading, error, addOrder, cancel, amend }}>
+    <OpenOrdersContext.Provider
+      value={{ orders, loading, error, addOrder, refetch, cancel, amend }}
+    >
       {children}
     </OpenOrdersContext.Provider>
   );
@@ -47,6 +61,7 @@ export const OpenOrdersProvider = ({ children }: { children: React.ReactNode }) 
 
 export const useOpenOrders = () => {
   const ctx = useContext(OpenOrdersContext);
-  if (!ctx) throw new Error("useOpenOrders must be used within OpenOrdersProvider");
+  if (!ctx)
+    throw new Error("useOpenOrders must be used within OpenOrdersProvider");
   return ctx;
 };
