@@ -54,7 +54,7 @@ export const OrderContextPanel = ({
             <TrendingUp className="h-5 w-5 text-ink4" />
           </div>
           <p className="text-sm text-ink4 leading-relaxed">
-            Select a stock to see price and order details here
+            {t("trade.selectStockPrompt")}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Loader2 } from "lucide-react";
 import { api, type HoldingData, type Stock } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -9,6 +10,7 @@ interface HoldingsPickerProps {
 }
 
 export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
+  const { t } = useTranslation();
   const [holdings, setHoldings] = useState<HoldingData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,7 +44,7 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
         </div>
       ) : holdings.length === 0 ? (
         <div className="px-4 py-10 text-center text-sm text-ink4">
-          You have no holdings to sell.
+          {t("trade.noHoldings")}
         </div>
       ) : (
         <ul className="max-h-72 overflow-y-auto">
@@ -71,9 +73,9 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
                       {h.symbol}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm text-ink2">{h.qty} shares</p>
+                      <p className="text-sm text-ink2">{t("trade.holdingShares", { count: h.qty })}</p>
                       <p className="text-xs text-ink4">
-                        Avg {formatCurrency(h.avgPrice)} · {h.ccy}
+                        {t("trade.holdingAvg", { price: formatCurrency(h.avgPrice), ccy: h.ccy })}
                       </p>
                     </div>
                   </div>
@@ -97,7 +99,7 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
         </ul>
       )}
       <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
-        {loading ? "Loading holdings…" : `${holdings.length} holding${holdings.length !== 1 ? "s" : ""}`}
+        {loading ? t("trade.holdingsLoading") : t("trade.holdingCount", { count: holdings.length })}
       </div>
     </div>
   );

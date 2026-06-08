@@ -1,13 +1,13 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { Card, CardHeader, CardTitle, CardContent } from "../../ui/card";
 import { api } from "@/lib/api";
 import type { Stock } from "@/lib/api";
 import type { Trade } from "@/data/types";
+import { Card, CardHeader, CardTitle, CardContent } from "../../ui/card";
 import { SideSwitcher } from "../SideSwitcher";
 import { StepIndicator } from "../StepIndicator";
-import { TradeFormDefaultValues, type TradeFormType } from "./utils";
+import { TradeFormDefaultValues, computeEffectivePrice, type TradeFormType } from "./utils";
 import { TradeFormStep1 } from "./Step1";
 import { TradeFormStep2 } from "./Step2";
 import { TradeFormStep3 } from "./Step3";
@@ -35,7 +35,7 @@ export const TradeForm = ({ onOrderCreated, initialStock, onStockConsumed }: Tra
       .then((p) =>
         setFormData((prev) => ({ ...prev, buyingPower: p.stats.buyingPower })),
       )
-      .catch(() => {});
+      .catch((err) => console.error("Failed to fetch buying power:", err));
   }, []);
 
   useEffect(() => {
@@ -58,14 +58,7 @@ export const TradeForm = ({ onOrderCreated, initialStock, onStockConsumed }: Tra
   const limitPriceNum = parseFloat(limitPrice) || 0;
   const ccy = stock?.ccy ?? "USD";
   const rate = feeResult?.rate;
-  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
-  // limit price is entered in USD for non-USD/non-HKD stocks — convert to local currency
-  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
-  // if rate not yet known, fall back to market price so the first fee fetch bootstraps the rate
-  const effectivePrice =
-    orderType === "limit" && limitPriceNum > 0
-      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
-      : marketPrice;
+  const effectivePrice = computeEffectivePrice(orderType, marketPrice, limitPriceNum, ccy, rate);
 
   useEffect(() => {
     if (!stock || qty <= 0 || effectivePrice <= 0) {
@@ -97,16 +90,16 @@ export const TradeForm = ({ onOrderCreated, initialStock, onStockConsumed }: Tra
     setStep(1);
   }, [formData.formState]);
 
-  const handleSideChange = (newSide: "buy" | "sell") =>
+  const handleSideChange = useCallback((newSide: "buy" | "sell") =>
     setFormData((prev) => ({
       ...prev,
       side: newSide,
       symbol: "",
-      stock: null as any,
+      stock: null,
       holdingQty: null,
       quantity: "",
       feeResult: null,
-    }));
+    })), []);
 
   const stepLabels = [
     t("trade.step1Label"),

@@ -3,7 +3,7 @@ import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
 import { FormGroup } from "../../ui/form-group";
-import type { TradeFormOrderType, TradeFormType } from "./utils";
+import { computeEffectivePrice, type TradeFormOrderType, type TradeFormType } from "./utils";
 import type { SetStateAction } from "react";
 import { OrderContextPanel } from "../OrderContextPanel";
 
@@ -13,7 +13,7 @@ type TradeFormStep2Props = {
   setStep: React.Dispatch<SetStateAction<number>>;
 };
 
-export const EnterTradeFormAmount = (props: TradeFormStep2Props) => {
+export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
   const { formData, setFormData } = props;
   const { quantity, orderType, limitPrice, goodTill, stock, side, holdingQty, feeResult } = formData;
   const { t } = useTranslation();
@@ -52,8 +52,8 @@ export const EnterTradeFormAmount = (props: TradeFormStep2Props) => {
         {side === "sell" && holdingQty != null && (
           <p className={`mt-1 text-xs ${overHolding ? "text-red-500" : "text-ink4"}`}>
             {overHolding
-              ? `Exceeds your holding of ${holdingQty} shares`
-              : `You own ${holdingQty} shares`}
+              ? t("trade.exceedsHolding", { count: holdingQty })
+              : t("trade.youOwn", { count: holdingQty })}
           </p>
         )}
       </FormGroup>
@@ -113,12 +113,7 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
   const limitPriceNum = parseFloat(limitPrice) || 0;
   const ccy = stock?.ccy ?? "USD";
   const rate = feeResult?.rate;
-  const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
-  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
-  const effectivePrice =
-    orderType === "limit" && limitPriceNum > 0
-      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
-      : marketPrice;
+  const effectivePrice = computeEffectivePrice(orderType, marketPrice, limitPriceNum, ccy, rate);
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
   const overHolding = side === "sell" && holdingQty != null && qty > holdingQty;
@@ -126,7 +121,7 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
       <div className="lg:col-span-3 flex flex-col gap-4">
-        <EnterTradeFormAmount {...props} />
+        <TradeFormAmountFields {...props} />
 
         <div className="flex gap-2">
           <Button

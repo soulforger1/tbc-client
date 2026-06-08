@@ -8,7 +8,7 @@ import { Alert } from "../../ui/alert";
 import { OrderSummary } from "../OrderSummary";
 import type { TradeFormType } from "./utils";
 import { ConfirmOrderDialog } from "./ConfirmOrderDialog";
-import { EnterTradeFormAmount } from "./Step2";
+import { TradeFormAmountFields } from "./Step2";
 import { formatLocalCurrency, formatCurrency } from "@/lib/utils";
 
 type TradeFormStep3Props = {
@@ -79,7 +79,7 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
     <>
       <div>
         <div className="mb-4">
-          <EnterTradeFormAmount {...props} />
+          <TradeFormAmountFields {...props} />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-4 px-3 py-2.5 rounded-lg border border-edge bg-muted/40 text-sm">

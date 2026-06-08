@@ -1,7 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { TradeStatus } from "@/data/types";
-
-const STEP_LABELS = ["Open", "Filed", "Nominal", "Closed"];
 
 interface StatusStepperProps {
   step: number;
@@ -9,21 +8,29 @@ interface StatusStepperProps {
 }
 
 export const StatusStepper = ({ step, status }: StatusStepperProps) => {
+  const { t } = useTranslation();
+  const stepLabels = [
+    t("orders.steps.open"),
+    t("orders.steps.filed"),
+    t("orders.steps.nominal"),
+    t("orders.steps.closed"),
+  ];
+
   if (status === "cancelled") {
     return (
       <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/15 text-red-600 dark:text-red-400">
-        Cancelled
+        {t("orders.statusLabels.cancelled")}
       </span>
     );
   }
 
   return (
     <div className="flex items-center gap-0.5">
-      {STEP_LABELS.map((label, i) => {
+      {stepLabels.map((label, i) => {
         const done = step > i;
         const active = step === i;
         return (
-          <div key={label} className="flex items-center gap-0.5">
+          <div key={i} className="flex items-center gap-0.5">
             <div className="flex flex-col items-center">
               <div
                 title={label}
@@ -41,7 +48,7 @@ export const StatusStepper = ({ step, status }: StatusStepperProps) => {
                 {label}
               </span>
             </div>
-            {i < STEP_LABELS.length - 1 && (
+            {i < stepLabels.length - 1 && (
               <div className={cn("mb-2.5 h-px w-3", done ? "bg-emerald-500" : "bg-edge")} />
             )}
           </div>

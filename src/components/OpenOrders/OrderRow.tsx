@@ -56,10 +56,21 @@ export const OrderRow = ({ trade, onCancel, onAmend }: OrderRowProps) => {
       </Td>
       {locked ? (
         <Td center colSpan={2}>
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-500">
-            <Lock className="h-3 w-3" />
-            {t("orders.locked")}
-          </span>
+          <div className="flex flex-col items-center gap-1">
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-500">
+              <Lock className="h-3 w-3" />
+              {t("orders.locked")}
+            </span>
+            <span className="text-[10px] text-ink4">
+              {t("orders.brokerContact")}{" "}
+              <a
+                href={`tel:${import.meta.env.VITE_SUPPORT_PHONE}`}
+                className="font-medium text-ink2 hover:text-ink underline"
+              >
+                {import.meta.env.VITE_SUPPORT_PHONE}
+              </a>
+            </span>
+          </div>
         </Td>
       ) : (
         <>

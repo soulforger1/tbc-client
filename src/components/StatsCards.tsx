@@ -6,11 +6,13 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Card, CardContent } from "./ui/card";
 
 export const StatsCards = () => {
+  const { t } = useTranslation();
   const { data, loading } = usePortfolio();
   const stats = data?.stats;
 
@@ -24,40 +26,40 @@ export const StatsCards = () => {
 
   const items = [
     {
-      label: "Portfolio Value",
+      label: t("portfolio.stats.portfolioValue"),
       value: loading ? "—" : formatCurrency(portfolioValue),
       change: "—",
-      changeAmt: "total value",
+      changeAmt: t("portfolio.stats.totalValue"),
       positive: true,
       icon: TrendingUp,
       iconColor: "text-blue-500",
       iconBg: "bg-blue-500/10",
     },
     {
-      label: "Total P&L",
+      label: t("portfolio.stats.totalPnl"),
       value: loading ? "—" : formatCurrency(totalPnl),
       change: loading ? "—" : formatPercent(totalPnlPct),
-      changeAmt: "all time",
+      changeAmt: t("portfolio.stats.allTime"),
       positive: totalPnl >= 0,
       icon: DollarSign,
       iconColor: "text-emerald-500",
       iconBg: "bg-emerald-500/10",
     },
     {
-      label: "Stock Value",
+      label: t("portfolio.stats.stockValue"),
       value: loading ? "—" : formatCurrency(stats?.stockValueUSD ?? 0),
       change: "—",
-      changeAmt: "USD",
+      changeAmt: t("portfolio.stats.usd"),
       positive: true,
       icon: Target,
       iconColor: "text-violet-500",
       iconBg: "bg-violet-500/10",
     },
     {
-      label: "Available Cash",
+      label: t("portfolio.stats.availableCash"),
       value: loading ? "—" : formatCurrency(availableCash),
       change: "—",
-      changeAmt: "buying power",
+      changeAmt: t("portfolio.stats.buyingPower"),
       positive: true,
       icon: Wallet,
       iconColor: "text-amber-500",

@@ -1,16 +1,18 @@
+import { useTranslation } from "react-i18next";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 
 export const Holdings = () => {
+  const { t } = useTranslation();
   const { data, loading } = usePortfolio();
   const holdings = data?.holdings ?? [];
 
   return (
   <Card>
     <CardHeader>
-      <CardTitle>Holdings</CardTitle>
-      <span className="text-xs text-ink4">{loading ? "…" : `${holdings.length} positions`}</span>
+      <CardTitle>{t("portfolio.holdings.title")}</CardTitle>
+      <span className="text-xs text-ink4">{loading ? "…" : t("portfolio.holdings.positions", { count: holdings.length })}</span>
     </CardHeader>
     <CardContent>
       <div className="space-y-3">
@@ -26,7 +28,7 @@ export const Holdings = () => {
               <div>
                 <p className="text-sm font-semibold text-ink">{h.symbol}</p>
                 <p className="text-xs text-ink4">
-                  {h.qty} shares · avg {formatCurrency(h.avgPrice)}
+                  {t("portfolio.holdings.sharesAvg", { qty: h.qty, price: formatCurrency(h.avgPrice) })}
                 </p>
               </div>
             </div>

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
   Search,
@@ -8,10 +9,9 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { api, type Stock } from "@/lib/api";
+import { type Stock } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-
-const PAGE_SIZE = 20;
+import { useStockList } from "@/hooks/useStockList";
 
 interface SymbolPickerProps {
   value: string;
@@ -46,93 +46,17 @@ export const SymbolPicker = ({
   initialStock,
   alwaysOpen,
 }: SymbolPickerProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [stocks, setStocks] = useState<Stock[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
-  const [stockOffset, setStockOffset] = useState(0);
-  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const buttonRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // For the selected stock banner — prefer initialStock prop, fall back to finding in list
-  const bannerStock =
-    initialStock ?? stocks.find((s) => s.prefix === value) ?? null;
-  // For the dropdown (non-alwaysOpen) trigger label
+  const { query, setQuery, stocks, loading, loadingMore, hasMore, sentinelRef, debouncedQuery } =
+    useStockList(!!alwaysOpen);
+
+  const bannerStock = initialStock ?? stocks.find((s) => s.prefix === value) ?? null;
   const selectedStock = stocks.find((s) => s.prefix === value);
-
-  // ── alwaysOpen: debounce search query ──────────────────────────────────────
-  useEffect(() => {
-    if (!alwaysOpen) return;
-    const t = setTimeout(() => setDebouncedQuery(query), 300);
-    return () => clearTimeout(t);
-  }, [query, alwaysOpen]);
-
-  // ── alwaysOpen: initial load + reload on query change ──────────────────────
-  useEffect(() => {
-    if (!alwaysOpen) return;
-    setStocks([]);
-    setStockOffset(0);
-    setHasMore(false);
-    setLoading(true);
-    api
-      .getStocks({
-        limit: PAGE_SIZE,
-        offset: 0,
-        q: debouncedQuery || undefined,
-      })
-      .then(({ data, hasMore: more }) => {
-        setStocks(data);
-        setHasMore(more);
-        setStockOffset(PAGE_SIZE);
-      })
-      .finally(() => setLoading(false));
-  }, [debouncedQuery, alwaysOpen]);
-
-  // ── non-alwaysOpen: load all stocks once for dropdown ─────────────────────
-  useEffect(() => {
-    if (alwaysOpen) return;
-    api
-      .getStocks()
-      .then(({ data }) => setStocks(data))
-      .finally(() => setLoading(false));
-  }, [alwaysOpen]);
-
-  // ── alwaysOpen: infinite scroll via IntersectionObserver ──────────────────
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    try {
-      const { data, hasMore: more } = await api.getStocks({
-        limit: PAGE_SIZE,
-        offset: stockOffset,
-        q: debouncedQuery || undefined,
-      });
-      setStocks((prev) => [...prev, ...data]);
-      setHasMore(more);
-      setStockOffset((prev) => prev + PAGE_SIZE);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, hasMore, stockOffset, debouncedQuery]);
-
-  useEffect(() => {
-    if (!alwaysOpen) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) loadMore();
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [alwaysOpen, loadMore]);
 
   // ── dropdown open/close helpers ───────────────────────────────────────────
   useEffect(() => {
@@ -165,8 +89,15 @@ export const SymbolPicker = ({
         return;
       setOpen(false);
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   // client-side filter for dropdown only (alwaysOpen uses server-side)
@@ -215,7 +146,7 @@ export const SymbolPicker = ({
         ) : (
           <div className="flex items-center gap-2 px-4 py-3 border-b border-edge bg-muted/40 text-sm text-ink4">
             <div className="w-6 h-6 rounded-full border-2 border-dashed border-ink4 shrink-0" />
-            No stock selected
+            {t("symbol.noStockSelected")}
           </div>
         )}
 
@@ -227,7 +158,7 @@ export const SymbolPicker = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by symbol or company name..."
+            placeholder={t("symbol.searchPlaceholder")}
             className="w-full bg-transparent text-sm text-ink placeholder:text-ink4 focus:outline-none"
             autoFocus
           />
@@ -237,7 +168,7 @@ export const SymbolPicker = ({
               onClick={() => setQuery("")}
               className="text-ink4 hover:text-ink text-xs shrink-0"
             >
-              Clear
+              {t("symbol.clear")}
             </button>
           )}
         </div>
@@ -251,7 +182,7 @@ export const SymbolPicker = ({
           <ul className="max-h-64 overflow-y-auto">
             {stocks.length === 0 ? (
               <li className="px-4 py-4 text-sm text-ink4 text-center">
-                No stocks found{query ? ` for "${query}"` : ""}
+                {query ? t("symbol.noStocksFoundFor", { query }) : t("symbol.noStocksFound")}
               </li>
             ) : (
               <>
@@ -319,9 +250,10 @@ export const SymbolPicker = ({
         )}
 
         <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
-          {stocks.length} stock{stocks.length !== 1 ? "s" : ""}
-          {query ? ` matching "${query}"` : " loaded"}
-          {hasMore && !loading && " · scroll for more"}
+          {query
+            ? t("symbol.stocksMatching", { count: stocks.length, query })
+            : t("symbol.stocksLoaded", { count: stocks.length })}
+          {hasMore && !loading && ` · ${t("symbol.scrollForMore")}`}
         </div>
       </div>
     );
@@ -362,7 +294,7 @@ export const SymbolPicker = ({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by symbol or company name..."
+                placeholder={t("symbol.searchPlaceholder")}
                 className="w-full bg-transparent text-sm text-ink placeholder:text-ink4 focus:outline-none"
               />
               {query && (
@@ -371,7 +303,7 @@ export const SymbolPicker = ({
                   onClick={() => setQuery("")}
                   className="text-ink4 hover:text-ink text-xs shrink-0"
                 >
-                  Clear
+                  {t("symbol.clear")}
                 </button>
               )}
             </div>
@@ -379,7 +311,7 @@ export const SymbolPicker = ({
             <ul className="max-h-64 overflow-y-auto">
               {filtered.length === 0 ? (
                 <li className="px-4 py-4 text-sm text-ink4 text-center">
-                  No stocks found for "{query}"
+                  {t("symbol.noStocksFoundFor", { query })}
                 </li>
               ) : (
                 filtered.map((s) => (
@@ -415,8 +347,9 @@ export const SymbolPicker = ({
             </ul>
 
             <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
-              {filtered.length} stock{filtered.length !== 1 ? "s" : ""}
-              {query ? ` matching "${query}"` : " available"}
+              {query
+                ? t("symbol.stocksMatching", { count: filtered.length, query })
+                : t("symbol.stocksAvailable", { count: filtered.length })}
             </div>
           </div>,
           document.body,

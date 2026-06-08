@@ -56,7 +56,7 @@ export const OpenOrders = () => {
         <CardContent>
           {loading ? (
             <div className="flex h-40 items-center justify-center text-sm text-ink4">
-              Loading…
+              {t("common.loading")}
             </div>
           ) : orders.length === 0 ? (
             <div className="flex h-40 items-center justify-center text-sm text-ink4">
@@ -195,10 +195,21 @@ const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
 
       {/* Actions */}
       {trade.locked ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500">
-          <Lock className="h-3 w-3" />
-          {t("orders.locked")}
-        </span>
+        <div className="space-y-1.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500">
+            <Lock className="h-3 w-3" />
+            {t("orders.locked")}
+          </span>
+          <p className="text-[11px] text-ink4">
+            {t("orders.brokerContact")}{" "}
+            <a
+              href={`tel:${import.meta.env.VITE_SUPPORT_PHONE}`}
+              className="font-medium text-ink2 underline"
+            >
+              {import.meta.env.VITE_SUPPORT_PHONE}
+            </a>
+          </p>
+        </div>
       ) : (
         <div className="flex gap-2">
           <Button

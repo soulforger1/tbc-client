@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Lock, Wallet } from "lucide-react";
 import { api, type WalletEntry } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const WalletPage = () => {
+  const { t } = useTranslation();
   const [wallets, setWallets] = useState<WalletEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export const WalletPage = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-end justify-between">
-                  <span className="text-xs text-ink4">Total Balance</span>
+                  <span className="text-xs text-ink4">{t("wallet.totalBalance")}</span>
                   <span className="text-2xl font-bold text-ink">
                     {formatCurrency(w.balance)}
                   </span>
@@ -64,14 +66,14 @@ export const WalletPage = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-1.5 text-ink3">
                       <Lock className="h-3 w-3" />
-                      Locked in orders
+                      {t("wallet.lockedInOrders")}
                     </span>
                     <span className="font-medium text-ink2">
                       {formatCurrency(w.lockedAmount)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-ink3">Available</span>
+                    <span className="text-ink3">{t("wallet.available")}</span>
                     <span className="font-semibold text-emerald-500">
                       {formatCurrency(w.available)}
                     </span>
@@ -91,8 +93,8 @@ export const WalletPage = () => {
                 </div>
                 <p className="text-xs text-ink4">
                   {w.balance > 0
-                    ? `${Math.round((w.available / w.balance) * 100)}% available`
-                    : "No balance"}
+                    ? t("wallet.percentAvailable", { pct: Math.round((w.available / w.balance) * 100) })
+                    : t("wallet.noBalance")}
                 </p>
               </div>
             </CardContent>
@@ -101,7 +103,7 @@ export const WalletPage = () => {
 
         {wallets.length === 0 && (
           <div className="col-span-full flex h-48 items-center justify-center rounded-xl border border-dashed border-edge text-sm text-ink4">
-            No wallets found
+            {t("wallet.noWallets")}
           </div>
         )}
       </div>

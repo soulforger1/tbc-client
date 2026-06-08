@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryState, parseAsString, parseAsStringLiteral } from "nuqs";
 import { type Trade, type TradeStatus, type TradeSide } from "@/data/types";
@@ -28,15 +29,19 @@ export const TradeHistory = () => {
   );
 
   const q = search.toLowerCase();
-  const filtered = trades.filter((trade: Trade) => {
-    const matchSearch =
-      !q ||
-      (trade.symbol ?? "").toLowerCase().includes(q) ||
-      (trade.id ?? "").toLowerCase().includes(q);
-    const matchStatus = statusFilter === "all" || (trade.status ?? "") === statusFilter;
-    const matchSide = sideFilter === "all" || trade.side === sideFilter;
-    return matchSearch && matchStatus && matchSide;
-  });
+  const filtered = useMemo(
+    () =>
+      trades.filter((trade: Trade) => {
+        const matchSearch =
+          !q ||
+          (trade.symbol ?? "").toLowerCase().includes(q) ||
+          (trade.id ?? "").toLowerCase().includes(q);
+        const matchStatus = statusFilter === "all" || (trade.status ?? "") === statusFilter;
+        const matchSide = sideFilter === "all" || trade.side === sideFilter;
+        return matchSearch && matchStatus && matchSide;
+      }),
+    [trades, q, statusFilter, sideFilter],
+  );
 
   return (
     <Card>

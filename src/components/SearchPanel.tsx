@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { Stock } from "@/lib/api";
 import type { Trade } from "@/data/types";
 import { formatCurrency } from "@/lib/utils";
+import { STATUS_TEXT_COLOR } from "./TradeHistory";
 
 interface SearchPanelProps {
   onClose: () => void;
@@ -26,7 +27,7 @@ export const SearchPanel = ({ onClose, onNavigate, onSelectStock }: SearchPanelP
     api
       .getOrders()
       .then(setOrders)
-      .catch(() => {});
+      .catch((err) => console.error("Failed to fetch orders:", err));
   }, []);
 
   useEffect(() => {
@@ -204,15 +205,7 @@ export const SearchPanel = ({ onClose, onNavigate, onSelectStock }: SearchPanelP
                     {formatCurrency(tr.total)}
                   </p>
                   <span
-                    className={`text-xs font-medium capitalize ${
-                      tr.status === "filled" || tr.status === "final"
-                        ? "text-emerald-500"
-                        : tr.status === "cancelled"
-                          ? "text-ink4"
-                          : tr.status === "open"
-                            ? "text-blue-500"
-                            : "text-amber-500"
-                    }`}
+                    className={`text-xs font-medium capitalize ${STATUS_TEXT_COLOR[tr.status] ?? "text-ink4"}`}
                   >
                     {tr.status}
                   </span>
