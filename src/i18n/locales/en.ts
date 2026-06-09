@@ -161,6 +161,13 @@ const en = {
     mongolian: "Монгол",
     englishSub: "English (EN)",
     mongolianSub: "Mongolian (MN)",
+    account: "Account",
+    accountSub: "Your session and sign-out",
+    signedInAs: "Signed in as",
+    signOut: "Sign out",
+    signOutConfirm: "Are you sure you want to sign out?",
+    signOutYes: "Sign out",
+    signOutNo: "Cancel",
   },
   symbol: {
     noStockSelected: "No stock selected",

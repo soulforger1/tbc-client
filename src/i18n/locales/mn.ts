@@ -162,6 +162,13 @@ const mn = {
     mongolian: "Монгол",
     englishSub: "Англи хэл (EN)",
     mongolianSub: "Монгол хэл (MN)",
+    account: "Бүртгэл",
+    accountSub: "Таны сесс болон гарах",
+    signedInAs: "Нэвтэрсэн хэрэглэгч",
+    signOut: "Гарах",
+    signOutConfirm: "Та гарахдаа итгэлтэй байна уу?",
+    signOutYes: "Гарах",
+    signOutNo: "Болих",
   },
   symbol: {
     noStockSelected: "Хувьцаа сонгоогүй байна",

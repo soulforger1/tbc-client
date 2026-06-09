@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { OpenOrdersProvider } from "@/context/OpenOrdersContext";
 import { TradePage } from "@/pages/TradePage";
 import { HistoryPage } from "@/pages/HistoryPage";
@@ -14,6 +15,7 @@ import { PortfolioPage } from "@/pages/PortfolioPage";
 import { OrdersPage } from "@/pages/OrdersPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { WalletPage } from "@/pages/WalletPage";
+import { LoginPage } from "@/pages/LoginPage";
 
 const PlaceholderPage = ({ title }: { title: string }) => {
   const { t } = useTranslation();
@@ -54,7 +56,12 @@ const AppInner = () => {
   const renderPage = () => {
     switch (activeTab) {
       case "trade":
-        return <TradePage initialStock={initialStock} onStockConsumed={() => setInitialStock(null)} />;
+        return (
+          <TradePage
+            initialStock={initialStock}
+            onStockConsumed={() => setInitialStock(null)}
+          />
+        );
       case "history":
         return <HistoryPage />;
       case "portfolio":
@@ -79,7 +86,10 @@ const AppInner = () => {
           subtitle={meta.subtitle}
           onLogoClick={() => handleTabChange("trade")}
           onNavigate={handleTabChange}
-          onSelectStock={(stock) => { setInitialStock(stock); handleTabChange("trade"); }}
+          onSelectStock={(stock) => {
+            setInitialStock(stock);
+            handleTabChange("trade");
+          }}
         />
         <main className="flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6">
           {renderPage()}
@@ -90,12 +100,23 @@ const AppInner = () => {
   );
 };
 
+const AuthGate = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <LoginPage />;
+  return (
+    <OpenOrdersProvider>
+      <AppInner />
+    </OpenOrdersProvider>
+  );
+};
+
 const App = () => (
   <ThemeProvider>
     <ToastProvider>
-      <OpenOrdersProvider>
-        <AppInner />
-      </OpenOrdersProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </ToastProvider>
   </ThemeProvider>
 );

@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { LogOut } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { useOpenOrders } from "@/hooks/useOpenOrders";
+import { useAuth } from "@/context/AuthContext";
 import {
   BarChart3,
   ClipboardList,
@@ -19,6 +23,10 @@ interface SidebarProps {
 export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
   const { t } = useTranslation();
   const { orders } = useOpenOrders();
+  const { user, logout } = useAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const initials = user?.regno ? user.regno.slice(0, 2).toUpperCase() : "??";
 
   const primaryNav = [
     { id: "trade", label: t("nav.newTrade"), icon: TrendingUp },
@@ -115,15 +123,59 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         </button>
 
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-ink2">
-            ZY
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-subtle text-xs font-semibold text-ink2">
+            {initials}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-ink">Zolboo Y.</p>
-            <p className="truncate text-xs text-ink4">zolbooyuro@gmail.com</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-ink">{user?.regno ?? "—"}</p>
+            <p className="truncate text-xs text-ink4">{t("settings.signedInAs")}</p>
           </div>
+          <button
+            onClick={() => setLogoutOpen(true)}
+            title={t("settings.signOut")}
+            className="flex-shrink-0 rounded-md p-1.5 text-ink4 transition-colors hover:bg-muted hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
+
+        {logoutOpen && (
+          <LogoutModal onCancel={() => setLogoutOpen(false)} onConfirm={() => void logout()} />
+        )}
       </div>
     </aside>
+  );
+};
+
+export const LogoutModal = ({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) => {
+  const { t } = useTranslation();
+  return (
+    <Modal onClose={onCancel} maxWidth="sm">
+      <div className="flex flex-col items-center px-6 pb-6 pt-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 ring-4 ring-destructive/10">
+          <LogOut className="h-7 w-7 text-destructive" />
+        </div>
+
+        <h2 className="mt-4 text-lg font-semibold text-ink">{t("settings.signOut")}</h2>
+        <p className="mt-2 max-w-[260px] text-sm leading-relaxed text-ink4">
+          {t("settings.signOutConfirm")}
+        </p>
+
+        <div className="mt-6 flex w-full gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-edge bg-card py-2.5 text-sm font-medium text-ink3 transition-colors hover:bg-muted hover:text-ink"
+          >
+            {t("settings.signOutNo")}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-semibold text-white shadow-sm shadow-destructive/30 transition-all hover:opacity-90 active:scale-[0.98]"
+          >
+            {t("settings.signOutYes")}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 };

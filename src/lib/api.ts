@@ -1,12 +1,14 @@
 import type { Trade } from "@/data/types";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-const REGNO = import.meta.env.VITE_REGNO ?? "";
+import { getSessionToken } from "@/context/AuthContext";
 
-function reqHeaders(regno = REGNO): HeadersInit {
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+
+function reqHeaders(): HeadersInit {
+  const token = getSessionToken() ?? "";
   return {
     "Content-Type": "application/json",
-    "x-regno": encodeURIComponent(regno),
+    Authorization: `Bearer ${token}`,
   };
 }
 
@@ -15,26 +17,26 @@ async function throwApiError(res: Response): Promise<never> {
   throw new Error(body?.error ?? `${res.status} ${res.statusText}`);
 }
 
-async function get<T>(path: string, regno = REGNO): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, { headers: reqHeaders(regno) });
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, { headers: reqHeaders() });
   if (!res.ok) return throwApiError(res);
   return res.json() as Promise<T>;
 }
 
-async function post<T>(path: string, body: unknown, regno = REGNO): Promise<T> {
+async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    headers: reqHeaders(regno),
+    headers: reqHeaders(),
     body: JSON.stringify(body),
   });
   if (!res.ok) return throwApiError(res);
   return res.json() as Promise<T>;
 }
 
-async function patch<T>(path: string, body?: unknown, regno = REGNO): Promise<T> {
+async function patch<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: "PATCH",
-    headers: reqHeaders(regno),
+    headers: reqHeaders(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) return throwApiError(res);
