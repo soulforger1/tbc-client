@@ -1,4 +1,4 @@
-import type { Trade } from "@/data/types";
+import type { Trade, PartialFill } from "@/data/types";
 
 import { getSessionToken } from "@/context/AuthContext";
 
@@ -86,6 +86,7 @@ export interface CreateOrderPayload {
   orderType: "market" | "limit";
   quantity: number;
   price?: number;
+  rate?: number;
   goodTill?: "day" | "gtc";
   description?: string;
 }
@@ -100,6 +101,7 @@ export interface Stock {
   pc: number | null;
   mp: number | null;
   value_date: string | null;
+  rate: number | null;
 }
 
 export interface StocksResponse {
@@ -113,6 +115,7 @@ export interface FeeResponse {
   warranty: string;
   amount: number;
   feeTrans: number;
+  stampDuty: number;
   rate: number;
 }
 
@@ -136,7 +139,14 @@ export const api = {
   cancelOrder: (id: string) => patch<Trade>(`/orders/${id}/cancel`),
   amendOrder: (id: string, quantity: number, price: number) =>
     patch<Trade>(`/orders/${id}/amend`, { quantity, price }),
-  getFee: (params: { size: number; price: number; ccy: string; date?: string }) => {
+  getPartialFills: (id: string) =>
+    get<PartialFill[]>(`/orders/${id}/partial-fills`),
+  getFee: (params: {
+    size: number;
+    price: number;
+    ccy: string;
+    date?: string;
+  }) => {
     const sp = new URLSearchParams({
       size: String(params.size),
       price: String(params.price),
@@ -146,4 +156,3 @@ export const api = {
     return get<FeeResponse>(`/fee/calculate?${sp.toString()}`);
   },
 };
-

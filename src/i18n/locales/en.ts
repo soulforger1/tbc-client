@@ -38,6 +38,7 @@ const en = {
     orderType: "Order Type",
     goodTill: "Good Till",
     commission: "Commission",
+    stampDuty: "Stamp Duty (0.1%)",
     tradeValue: "Trade Value $",
     rate: "Rate",
     description: "Description",
@@ -82,7 +83,8 @@ const en = {
     noOrders: "No open orders",
     cancel: "Cancel",
     cancelTitle: "Cancel Order",
-    cancelConfirmText: "Are you sure you want to cancel this order? This action cannot be undone.",
+    cancelConfirmText:
+      "Are you sure you want to cancel this order? This action cannot be undone.",
     cancelNo: "Keep Order",
     cancelYes: "Yes, Cancel",
     amend: "Amend",
@@ -115,6 +117,10 @@ const en = {
       goodTill: "Good Till",
       status: "Status",
     },
+    viewFills: "View Fills",
+    fillsTitle: "Partial Fills",
+    originalRequest: "Original Request",
+    noFills: "No partial fills recorded",
   },
   history: {
     title: "Trade History",
@@ -210,6 +216,7 @@ const en = {
   },
   common: {
     loading: "Loading…",
+    close: "Close",
     search: "Search orders",
     refresh: "Refresh data",
     noResults: 'No results for "{{query}}"',

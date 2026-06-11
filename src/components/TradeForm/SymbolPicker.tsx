@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { type Stock } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { stockPriceToUSD } from "@/lib/currency";
 import { useStockList } from "@/hooks/useStockList";
 
 interface SymbolPickerProps {
@@ -52,10 +53,18 @@ export const SymbolPicker = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { query, setQuery, stocks, loading, loadingMore, hasMore, sentinelRef, debouncedQuery } =
-    useStockList(!!alwaysOpen);
+  const {
+    query,
+    setQuery,
+    stocks,
+    loading,
+    loadingMore,
+    hasMore,
+    sentinelRef,
+  } = useStockList(!!alwaysOpen);
 
-  const bannerStock = initialStock ?? stocks.find((s) => s.prefix === value) ?? null;
+  const bannerStock =
+    initialStock ?? stocks.find((s) => s.prefix === value) ?? null;
   const selectedStock = stocks.find((s) => s.prefix === value);
 
   // ── dropdown open/close helpers ───────────────────────────────────────────
@@ -133,8 +142,10 @@ export const SymbolPicker = ({
             </div>
             <div className="shrink-0 text-right ml-2">
               <div className="text-sm font-bold text-ink">
-                {bannerStock.price != null
-                  ? formatCurrency(bannerStock.price)
+                {stockPriceToUSD(bannerStock.price, bannerStock.rate) != null
+                  ? formatCurrency(
+                      stockPriceToUSD(bannerStock.price, bannerStock.rate)!,
+                    )
                   : "—"}
               </div>
               <div className="flex items-center justify-end gap-1.5 mt-0.5">
@@ -182,7 +193,9 @@ export const SymbolPicker = ({
           <ul className="max-h-64 overflow-y-auto">
             {stocks.length === 0 ? (
               <li className="px-4 py-4 text-sm text-ink4 text-center">
-                {query ? t("symbol.noStocksFoundFor", { query }) : t("symbol.noStocksFound")}
+                {query
+                  ? t("symbol.noStocksFoundFor", { query })
+                  : t("symbol.noStocksFound")}
               </li>
             ) : (
               <>
@@ -221,7 +234,11 @@ export const SymbolPicker = ({
                         <div className="shrink-0 ml-3 flex items-center gap-3">
                           <div className="text-right">
                             <div className="text-sm font-semibold text-ink">
-                              {s.price != null ? formatCurrency(s.price) : "—"}
+                              {stockPriceToUSD(s.price, s.rate) != null
+                                ? formatCurrency(
+                                    stockPriceToUSD(s.price, s.rate)!,
+                                  )
+                                : "—"}
                             </div>
                             <PriceChange pc={s.pc} />
                           </div>
@@ -336,7 +353,9 @@ export const SymbolPicker = ({
                       </div>
                       <div className="shrink-0 ml-3 flex flex-col items-end gap-0.5">
                         <span className="text-xs font-semibold text-ink">
-                          {s.price != null ? formatCurrency(s.price) : "—"}
+                          {stockPriceToUSD(s.price, s.rate) != null
+                            ? formatCurrency(stockPriceToUSD(s.price, s.rate)!)
+                            : "—"}
                         </span>
                         <PriceChange pc={s.pc} />
                       </div>

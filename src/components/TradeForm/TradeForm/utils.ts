@@ -1,4 +1,5 @@
 import type { FeeResponse, Stock } from "@/lib/api";
+import { usdToNative } from "@/lib/currency";
 import type { FormState } from "../constants";
 
 export function computeEffectivePrice(
@@ -13,7 +14,7 @@ export function computeEffectivePrice(
   if (!isNonUsdNonHkd) return limitPriceNum;
   // limit price is entered in USD for non-USD/non-HKD — convert to local currency.
   // if rate not yet known, fall back to market price so the first fee fetch bootstraps the rate.
-  return rate ? limitPriceNum * rate : marketPrice;
+  return rate ? usdToNative(limitPriceNum, rate) : marketPrice;
 }
 
 export type TradeFormOrderType = "market" | "limit";

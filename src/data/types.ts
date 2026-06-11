@@ -1,7 +1,20 @@
-export type TradeStatus = "open" | "closed" | "cancelled" | "filled" | "partial" | "final";
+export type TradeStatus =
+  | "open"
+  | "closed"
+  | "cancelled"
+  | "filled"
+  | "partial"
+  | "final";
 export type TradeSide = "buy" | "sell";
 export type OrderType = "market" | "limit";
 export type GoodTill = "day" | "gtc";
+
+export interface PartialFill {
+  id: number;
+  price: number;
+  quantity: number;
+  created_at: string;
+}
 
 export interface Trade {
   id: string;
@@ -23,6 +36,8 @@ export interface Trade {
   step: number;
   locked: boolean;
   description?: string;
+  originalRequest: { quantity: number; price: number | null } | null;
+  partialFills: PartialFill[];
   createdAt: string;
   updatedAt: string;
 }

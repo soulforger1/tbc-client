@@ -14,6 +14,7 @@ import { CancelModal } from "./CancelModal";
 import { StatusStepper } from "./StatusStepper";
 import { goodTillLabel } from "./utils";
 import { formatCurrency } from "@/lib/utils";
+import { nativeToUSD, calcTradeValueUSD } from "@/lib/currency";
 
 export const OpenOrders = () => {
   const { t } = useTranslation();
@@ -140,10 +141,15 @@ interface OrderCardProps {
 const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
   const { t } = useTranslation();
   const isMarket = trade.orderType === "market";
-  const displayPrice = isMarket ? trade.filledPrice : trade.price;
+  const rate = trade.rate ?? 1;
+  const rawPrice = isMarket ? trade.filledPrice : trade.price;
+  const displayPrice = rawPrice != null ? nativeToUSD(rawPrice, rate) : null;
   const displayTradeVal = isMarket
-    ? trade.tradeValue
-    : trade.price != null ? trade.quantity * trade.price : null;
+    ? (trade.tradeValueUSD ??
+      (trade.tradeValue != null ? nativeToUSD(trade.tradeValue, rate) : null))
+    : trade.price != null
+      ? calcTradeValueUSD(trade.quantity, trade.price, rate)
+      : null;
 
   return (
     <div className="rounded-xl border border-edge bg-muted/40 p-3 space-y-3">
@@ -162,7 +168,8 @@ const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
           {goodTillLabel(trade.goodTill)}
         </span>
       </div>
-      {/* Status stepper on its own row */}
+
+      {/* Status stepper */}
       <StatusStepper step={trade.step} status={trade.status} />
 
       {/* Values row */}
@@ -193,6 +200,42 @@ const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
         </div>
       </div>
 
+      {/* Partial fills inline (mobile) */}
+      {trade.partialFills.length > 0 && (
+        <div className="rounded-lg border border-edge/60 overflow-hidden text-xs">
+          <div className="bg-muted/60 px-3 py-1.5 text-[11px] font-medium text-ink3 uppercase tracking-wide">
+            {t("orders.fillsTitle")}
+            {trade.originalRequest && (
+              <span className="ml-2 font-normal text-ink4 normal-case tracking-normal">
+                — {t("orders.originalRequest")}:{" "}
+                {trade.originalRequest.quantity} {t("orders.cols.qty")}
+                {trade.originalRequest.price != null &&
+                  ` @ ${formatCurrency(nativeToUSD(trade.originalRequest.price, rate))}`}
+              </span>
+            )}
+          </div>
+          <div className="divide-y divide-edge/40">
+            {trade.partialFills.map((fill, i) => (
+              <div
+                key={fill.id}
+                className="flex items-center justify-between px-3 py-1.5"
+              >
+                <span className="text-ink4">#{i + 1}</span>
+                <span className="text-ink2">
+                  {formatCurrency(nativeToUSD(Number(fill.price), rate))}
+                </span>
+                <span className="text-ink2">
+                  {fill.quantity} {t("orders.cols.qty")}
+                </span>
+                <span className="text-ink4">
+                  {new Date(fill.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       {trade.locked ? (
         <div className="space-y-1.5">
@@ -216,7 +259,7 @@ const OrderCard = ({ trade, onCancel, onAmend }: OrderCardProps) => {
             onClick={() => onCancel(trade)}
             variant="destructive"
             size="sm"
-            className={isMarket ? "flex-1" : "flex-1"}
+            className="flex-1"
           >
             <X className="h-3 w-3" />
             {t("orders.cancel")}

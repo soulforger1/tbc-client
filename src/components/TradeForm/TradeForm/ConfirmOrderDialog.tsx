@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Modal } from "../../ui/modal";
 import { Button } from "../../ui/button";
-import { formatLocalCurrency, formatCurrency } from "@/lib/utils";
+import { fmtAmount, limitPriceToNative } from "@/lib/currency";
 import type { TradeFormType } from "./utils";
 
 interface ConfirmOrderDialogProps {
@@ -31,17 +31,17 @@ export const ConfirmOrderDialog = ({
   const ccy = stock.ccy;
   const rate = feeResult?.rate;
   const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
-  const convertingToUsd = isNonUsdNonHkd && rate != null && rate > 0;
-  const fmt = (v: number) =>
-    convertingToUsd ? formatCurrency(v / rate!) : formatLocalCurrency(v, ccy);
+  const fmt = (v: number) => fmtAmount(v, ccy, rate);
 
   const marketPrice = stock?.price ?? 0;
   const qty = parseFloat(quantity) || 0;
   const limitPriceNum = parseFloat(limitPrice) || 0;
-  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
+  const limitPriceLocal = limitPriceToNative(limitPriceNum, ccy, rate);
   const effectivePrice =
     orderType === "limit" && limitPriceNum > 0
-      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
+      ? isNonUsdNonHkd && !rate
+        ? marketPrice
+        : limitPriceLocal
       : marketPrice;
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
@@ -100,7 +100,9 @@ export const ConfirmOrderDialog = ({
                 <span className="text-sm font-semibold text-ink">
                   {t("trade.estTotal")}
                 </span>
-                <span className="text-base font-bold text-ink">{fmt(total)}</span>
+                <span className="text-base font-bold text-ink">
+                  {fmt(total)}
+                </span>
               </div>
             </>
           )}

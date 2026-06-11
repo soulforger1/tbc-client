@@ -3,7 +3,12 @@ import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
 import { FormGroup } from "../../ui/form-group";
-import { computeEffectivePrice, type TradeFormOrderType, type TradeFormType } from "./utils";
+import {
+  computeEffectivePrice,
+  type TradeFormOrderType,
+  type TradeFormType,
+} from "./utils";
+import { nativeToUSD } from "@/lib/currency";
 import type { SetStateAction } from "react";
 import { OrderContextPanel } from "../OrderContextPanel";
 
@@ -15,7 +20,16 @@ type TradeFormStep2Props = {
 
 export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
   const { formData, setFormData } = props;
-  const { quantity, orderType, limitPrice, goodTill, stock, side, holdingQty, feeResult } = formData;
+  const {
+    quantity,
+    orderType,
+    limitPrice,
+    goodTill,
+    stock,
+    side,
+    holdingQty,
+    feeResult,
+  } = formData;
   const { t } = useTranslation();
 
   const marketPrice = stock?.price ?? 0;
@@ -24,8 +38,8 @@ export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
   const ccy = stock?.ccy ?? "USD";
   const rate = feeResult?.rate;
   const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
-  const limitPriceNum = parseFloat(limitPrice) || 0;
-  const placeholderPrice = isNonUsdNonHkd && rate ? marketPrice / rate : marketPrice;
+  const placeholderPrice =
+    isNonUsdNonHkd && rate ? nativeToUSD(marketPrice, rate) : marketPrice;
 
   const setQuantity = (value: string) =>
     setFormData((prev) => ({ ...prev, quantity: value }));
@@ -50,7 +64,9 @@ export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
           autoFocus
         />
         {side === "sell" && holdingQty != null && (
-          <p className={`mt-1 text-xs ${overHolding ? "text-red-500" : "text-ink4"}`}>
+          <p
+            className={`mt-1 text-xs ${overHolding ? "text-red-500" : "text-ink4"}`}
+          >
             {overHolding
               ? t("trade.exceedsHolding", { count: holdingQty })
               : t("trade.youOwn", { count: holdingQty })}
@@ -74,7 +90,9 @@ export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
         <>
           <FormGroup label={t("trade.limitPrice")}>
             <Input
-              placeholder={placeholderPrice > 0 ? placeholderPrice.toFixed(2) : "0.00"}
+              placeholder={
+                placeholderPrice > 0 ? placeholderPrice.toFixed(2) : "0.00"
+              }
               value={limitPrice}
               onChange={(e) =>
                 setLimitPrice(
@@ -104,8 +122,16 @@ export const TradeFormAmountFields = (props: TradeFormStep2Props) => {
 
 export const TradeFormStep2 = (props: TradeFormStep2Props) => {
   const { formData, setStep } = props;
-  const { quantity, orderType, limitPrice, stock, feeResult, fetchingFee, side, holdingQty } =
-    formData;
+  const {
+    quantity,
+    orderType,
+    limitPrice,
+    stock,
+    feeResult,
+    fetchingFee,
+    side,
+    holdingQty,
+  } = formData;
   const { t } = useTranslation();
 
   const marketPrice = stock?.price ?? 0;
@@ -113,7 +139,13 @@ export const TradeFormStep2 = (props: TradeFormStep2Props) => {
   const limitPriceNum = parseFloat(limitPrice) || 0;
   const ccy = stock?.ccy ?? "USD";
   const rate = feeResult?.rate;
-  const effectivePrice = computeEffectivePrice(orderType, marketPrice, limitPriceNum, ccy, rate);
+  const effectivePrice = computeEffectivePrice(
+    orderType,
+    marketPrice,
+    limitPriceNum,
+    ccy,
+    rate,
+  );
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
   const overHolding = side === "sell" && holdingQty != null && qty > holdingQty;

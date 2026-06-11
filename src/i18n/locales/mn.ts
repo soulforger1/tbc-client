@@ -38,6 +38,7 @@ const mn = {
     orderType: "Захиалгын төрөл",
     goodTill: "Хүртэлх хугацаа",
     commission: "Хураамж",
+    stampDuty: "Тэмдэгтийн хураамж (0.1%)",
     tradeValue: "Гүйлгээний үнэ $",
     rate: "Ханш",
     description: "Тайлбар",
@@ -68,7 +69,8 @@ const mn = {
     confirmOrderSubtitle: "Захиалгын дэлгэрэнгүйг шалгана уу",
     exceedsHolding: "Таны {{count}} хувьцааны эзэмшлийг хэтэрсэн",
     youOwn: "Та {{count}} хувьцаа эзэмшиж байна",
-    selectStockPrompt: "Үнэ болон захиалгын мэдээллийг харахын тулд хувьцаа сонгоно уу",
+    selectStockPrompt:
+      "Үнэ болон захиалгын мэдээллийг харахын тулд хувьцаа сонгоно уу",
     noHoldings: "Зарах хувьцаа байхгүй байна.",
     holdingShares: "{{count}} хувьцаа",
     holdingAvg: "Дундаж {{price}} · {{ccy}}",
@@ -116,6 +118,10 @@ const mn = {
       goodTill: "Хугацаа",
       status: "Төлөв",
     },
+    viewFills: "Биелэлт харах",
+    fillsTitle: "Хэсэгчилсэн биелэлт",
+    originalRequest: "Анхны захиалга",
+    noFills: "Хэсэгчилсэн биелэлт байхгүй",
   },
   history: {
     title: "Гүйлгээний түүх",
@@ -211,6 +217,7 @@ const mn = {
   },
   common: {
     loading: "Ачааллаж байна…",
+    close: "Хаах",
     search: "Захиалга хайх",
     refresh: "Мэдээлэл шинэчлэх",
     noResults: '"{{query}}" олдсонгүй',

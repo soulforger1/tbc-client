@@ -10,6 +10,7 @@ import type { TradeFormType } from "./utils";
 import { ConfirmOrderDialog } from "./ConfirmOrderDialog";
 import { TradeFormAmountFields } from "./Step2";
 import { formatLocalCurrency, formatCurrency } from "@/lib/utils";
+import { nativeToUSD, limitPriceToNative } from "@/lib/currency";
 
 type TradeFormStep3Props = {
   formData: TradeFormType;
@@ -20,7 +21,8 @@ type TradeFormStep3Props = {
 
 export const TradeFormStep3 = (props: TradeFormStep3Props) => {
   const { formData, setStep, onOrderCreated } = props;
-  const { symbol, formState, side, orderType, stock, feeResult, goodTill } = formData;
+  const { symbol, formState, side, orderType, stock, feeResult, goodTill } =
+    formData;
   const { quantity, limitPrice, buyingPower, errorMessage } = formData;
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -29,21 +31,27 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
   const qty = parseFloat(quantity) || 0;
   const limitPriceNum = parseFloat(limitPrice) || 0;
   const ccy = stock?.ccy ?? "USD";
-  const rate = feeResult?.rate;
+  const rate = feeResult?.rate ?? stock?.rate ?? undefined;
   const isNonUsdNonHkd = ccy !== "USD" && ccy !== "HKD";
-  const convertingToUsd = isNonUsdNonHkd && rate != null && rate > 0;
-  const limitPriceLocal = isNonUsdNonHkd && rate ? limitPriceNum * rate : limitPriceNum;
+  const convertingToUsd = ccy !== "USD" && rate != null && rate > 0;
+  const limitPriceLocal = limitPriceToNative(limitPriceNum, ccy, rate);
   const effectivePrice =
     orderType === "limit" && limitPriceNum > 0
-      ? isNonUsdNonHkd && !rate ? marketPrice : limitPriceLocal
+      ? isNonUsdNonHkd && !rate
+        ? marketPrice
+        : limitPriceLocal
       : marketPrice;
   const tradeValue = qty * effectivePrice;
   const commission = feeResult?.feeTrans ?? null;
-  // limit price is already in USD when convertingToUsd — no division by rate
-  const fmtPrice = (v: number) =>
-    convertingToUsd ? formatCurrency(v) : formatLocalCurrency(v, ccy);
+  // non-USD non-HKD: user types USD (no conversion); HKD: user types HKD, convert to USD
+  const fmtPrice = (v: number) => {
+    if (!convertingToUsd) return formatLocalCurrency(v, ccy);
+    return formatCurrency(isNonUsdNonHkd ? v : nativeToUSD(v, rate!));
+  };
   const goodTillLabel =
-    orderType === "market" || goodTill === "day" ? t("trade.dayGoodTill") : t("trade.gtc");
+    orderType === "market" || goodTill === "day"
+      ? t("trade.dayGoodTill")
+      : t("trade.gtc");
 
   const { setFormData } = props;
   const handleSubmit = async () => {
@@ -59,10 +67,15 @@ export const TradeFormStep3 = (props: TradeFormStep3Props) => {
           orderType === "limit" && limitPriceNum > 0
             ? limitPriceLocal
             : undefined,
+        rate: rate ?? undefined,
         goodTill: orderType === "market" ? "day" : goodTill,
       });
       onOrderCreated?.(created);
-      setFormData((prev) => ({ ...prev, formState: "success", errorMessage: null }));
+      setFormData((prev) => ({
+        ...prev,
+        formState: "success",
+        errorMessage: null,
+      }));
     } catch (err) {
       setFormData((prev) => ({
         ...prev,

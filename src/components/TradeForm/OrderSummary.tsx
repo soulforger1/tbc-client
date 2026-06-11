@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 import { formatCurrency, formatLocalCurrency } from "@/lib/utils";
+import { fmtAmount } from "@/lib/currency";
 
 import type { Stock, FeeResponse } from "@/lib/api";
 
@@ -19,12 +20,16 @@ const SummaryRow = ({
   label,
   value,
   highlight,
+  className,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
+  className?: string;
 }) => (
-  <div className="flex items-center justify-between gap-2">
+  <div
+    className={`flex items-center justify-between gap-2${className ? ` ${className}` : ""}`}
+  >
     <span className="text-sm text-ink3">{label}</span>
     <span
       className={`text-sm font-medium ${highlight ? "text-emerald-500" : "text-ink2"}`}
@@ -49,10 +54,11 @@ export const OrderSummary = ({
 
   const ccy = selectedStock?.ccy ?? "USD";
   const rate = feeResult?.rate;
-  const convertingToUsd = ccy !== "USD" && ccy !== "HKD" && rate != null && rate > 0;
+  const convertingToUsd = ccy !== "USD" && rate != null && rate > 0;
   const displayCcy = convertingToUsd ? "USD" : ccy;
-  const fmt = (v: number) =>
-    convertingToUsd ? formatCurrency(v / rate!) : formatLocalCurrency(v, ccy);
+  const fmt = (v: number) => fmtAmount(v, ccy, rate);
+  const fmtPrice = (v: number) =>
+    convertingToUsd ? `${fmt(v)} (${formatLocalCurrency(v, ccy)})` : fmt(v);
 
   const rateLabel =
     feeResult && feeResult.rate !== 1
@@ -60,6 +66,8 @@ export const OrderSummary = ({
       : ccy === "USD"
         ? "1.0000 USD"
         : "—";
+
+  const stampDuty = feeResult?.stampDuty ?? 0;
 
   const commissionLabel =
     commission != null
@@ -75,7 +83,10 @@ export const OrderSummary = ({
           {t("trade.createOrder")}
         </p>
         <div className="grid grid-cols-1 gap-y-2.5 md:grid-cols-2 md:gap-x-6">
-          <SummaryRow label={t("trade.currency")} value={convertingToUsd ? `${ccy} → USD` : ccy} />
+          <SummaryRow
+            label={t("trade.currency")}
+            value={convertingToUsd ? `${ccy} → USD` : ccy}
+          />
           <SummaryRow
             label={t("trade.buyingPower")}
             value={buyingPower != null ? formatCurrency(buyingPower) : "—"}
@@ -83,7 +94,10 @@ export const OrderSummary = ({
           />
           {!isMarket && (
             <>
-              <SummaryRow label={t("trade.price")} value={fmt(marketPrice)} />
+              <SummaryRow
+                label={t("trade.price")}
+                value={fmtPrice(marketPrice)}
+              />
               <SummaryRow
                 label={t("trade.value")}
                 value={tradeValue > 0 ? fmt(tradeValue) : "—"}
@@ -93,12 +107,22 @@ export const OrderSummary = ({
           <SummaryRow label={t("trade.goodTill")} value={goodTill} />
           {!isMarket && (
             <>
-              <SummaryRow label={t("trade.commission")} value={commissionLabel} />
+              <SummaryRow
+                label={t("trade.commission")}
+                value={commissionLabel}
+              />
+              {stampDuty > 0 && (
+                <SummaryRow
+                  label={t("trade.stampDuty")}
+                  value={fmt(stampDuty)}
+                  className="md:col-start-2"
+                />
+              )}
               <SummaryRow
                 label={t("trade.tradeValue")}
                 value={
                   tradeValue > 0 && commission != null
-                    ? fmt(tradeValue + commission)
+                    ? fmt(tradeValue + commission + stampDuty)
                     : "—"
                 }
               />
@@ -118,13 +142,13 @@ export const OrderSummary = ({
         <div className="flex items-center gap-1.5 pb-4 text-sm text-ink3">
           <Info className="h-4 w-4 shrink-0" />
           {t("trade.marketPrice")}:{" "}
-          <span className="text-ink2">{fmt(marketPrice)}</span>
+          <span className="text-ink2">{fmtPrice(marketPrice)}</span>
           {tradeValue > 0 && commission != null && (
             <>
               {" "}
               · {t("trade.estTotal")}:{" "}
               <span className="font-semibold text-ink">
-                {fmt(tradeValue + commission)}
+                {fmt(tradeValue + commission + stampDuty)}
               </span>
             </>
           )}

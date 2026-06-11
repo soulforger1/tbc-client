@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Check, Loader2 } from "lucide-react";
 import { api, type HoldingData, type Stock } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { nativeToUSD } from "@/lib/currency";
 
 interface HoldingsPickerProps {
   value: string;
@@ -32,6 +33,7 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
       pc: null,
       mp: null,
       value_date: null,
+      rate: h.rate,
     };
     onSelect(h, stock);
   };
@@ -73,19 +75,29 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
                       {h.symbol}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm text-ink2">{t("trade.holdingShares", { count: h.qty })}</p>
+                      <p className="text-sm text-ink2">
+                        {t("trade.holdingShares", { count: h.qty })}
+                      </p>
                       <p className="text-xs text-ink4">
-                        {t("trade.holdingAvg", { price: formatCurrency(h.avgPrice), ccy: h.ccy })}
+                        {t("trade.holdingAvg", {
+                          price: formatCurrency(
+                            nativeToUSD(h.avgPrice, h.rate),
+                          ),
+                          ccy: h.ccy,
+                        })}
                       </p>
                     </div>
                   </div>
                   <div className="shrink-0 ml-3 flex items-center gap-3">
                     <div className="text-right">
                       <p className="text-sm font-semibold text-ink">
-                        {formatCurrency(h.currentPrice)}
+                        {formatCurrency(nativeToUSD(h.currentPrice, h.rate))}
                       </p>
-                      <p className={`text-xs font-medium ${pnlPositive ? "text-emerald-500" : "text-red-500"}`}>
-                        {pnlPositive ? "+" : ""}{h.pnlPct.toFixed(2)}%
+                      <p
+                        className={`text-xs font-medium ${pnlPositive ? "text-emerald-500" : "text-red-500"}`}
+                      >
+                        {pnlPositive ? "+" : ""}
+                        {h.pnlPct.toFixed(2)}%
                       </p>
                     </div>
                     <div className="w-4 flex items-center justify-center">
@@ -99,7 +111,9 @@ export const HoldingsPicker = ({ value, onSelect }: HoldingsPickerProps) => {
         </ul>
       )}
       <div className="px-4 py-2 border-t border-edge bg-muted/40 text-xs text-ink4">
-        {loading ? t("trade.holdingsLoading") : t("trade.holdingCount", { count: holdings.length })}
+        {loading
+          ? t("trade.holdingsLoading")
+          : t("trade.holdingCount", { count: holdings.length })}
       </div>
     </div>
   );
